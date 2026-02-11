@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@drawable/ic_logo_round"
+        android:label="@string/app_name"
+        android:roundIcon="@drawable/ic_logo_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.HospitalAppJava"
+        tools:targetApi="31">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".SecondActivity"
+            android:exported="true"
+            android:label="DashBoard"/>
+        <activity android:name=".ManagePatientsActivity"/>
+        <activity android:name=".AddPatientActivity"/>
+        <activity
+            android:name=".ManageStaffActivity"
+            android:label="Staff Management"
+            android:parentActivityName=".SecondActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".SecondActivity" />
+        </activity>
+        <activity android:name=".AddStaffActivity"/>
+        <activity android:name=".EditPatientActivity" />
+        <activity android:name=".EditStaffActivity" />
+        <activity android:name=".ManageAppointmentsActivity" />
+        <activity android:name=".AddAppointmentActivity" />
+        <activity android:name=".AppointmentDetailsActivity" />
+        <activity android:name=".EditAppointmentActivity" />
+        <activity android:name=".ReportsActivity" />
+    </application>
+
+</manifest>
