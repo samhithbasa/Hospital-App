@@ -1,0 +1,61 @@
+<resources>
+    <string name="app_name">Trinity Care</string>
+    <string name="patient_label">Patient: %s</string>
+    <string name="doctor_label">Doctor: %s</string>
+    <string name="date_label">Date: %s</string>
+    <string name="time_label">Time: %s</string>
+    <string name="purpose_label">Purpose: %s</string>
+    <string name="status_label">Status: %s</string>
+    <string name="appointment_deleted">Appointment deleted</string>
+    <string name="error_deleting_appointment">Error deleting appointment</string>
+    <string name="reports_title">Hospital Reports</string>
+    <string name="patient_count">Total Patients: %d</string>
+    <string name="staff_count">Total Staff: %d</string>
+    <string name="appointment_count">Total Appointments: %d</string>
+    <string name="upcoming_appointments">Upcoming Appointments:</string>
+    <string name="doctor_appointments_title">Doctor Appointments:</string>
+    <string name="no_upcoming_appointments">No upcoming appointments scheduled</string>
+    <string name="with_doctor">With Dr. %s</string>
+    <string name="on_date">On: %s</string>
+    <string name="at_time">At: %s</string>
+    <string name="completed_appointments">Completed Appointments</string>
+    <string name="canceled_appointments">Canceled Appointments</string>
+    <string name="no_completed_appointments">No completed appointments</string>
+    <string name="no_canceled_appointments">No canceled appointments</string>
+    <string name="scheduled_for_time">Scheduled for: %1$s</string>
+    <string name="status_updated_at">Status updated at: %1$s</string>
+    <string name="invalid_credentials">Invalid username or password</string>
+    <string name="fill_all_fields">Please enter both username and password</string>
+    <string name="signup_success">Sign Up successful! You can now login.</string>
+    <string name="username_exists">Username already exists. Try a different name.</string>
+    <string-array name="gender_options">
+        <item>Select Gender</item>
+        <item>Male</item>
+        <item>Female</item>
+        <item>Other</item>
+    </string-array>
+    <string name="gender_prompt">Select Gender</string>
+    <string name="add_staff_title">Add Staff Member</string>
+    <string name="save_staff">Save Staff Member</string>
+    <string name="doctor_count">Total Doctors: %1$d</string>
+    <string name="nurse_count">Total Nurses: %1$d</string>
+    <string name="edit_staff_title">Edit Staff</string>
+    <string name="label_name">Name</string>
+    <string name="hint_name">Enter name</string>
+    <string name="label_role">Role</string>
+    <string name="hint_role">Enter role</string>
+    <string name="label_department">Department</string>
+    <string name="hint_department">Enter department</string>
+    <string name="label_email">Email</string>
+    <string name="hint_email">Enter email</string>
+    <string name="label_phone">Phone</string>
+    <string name="hint_phone">Enter phone number</string>
+    <string name="label_join_date">Join Date</string>
+    <string name="hint_join_date">YYYY-MM-DD</string>
+    <string name="label_address">Address</string>
+    <string name="hint_address">Enter address</string>
+    <string name="button_save_changes">Save Changes</string>
+    <string name="button_cancel">Cancel</string>
+    
+
+</resources>
