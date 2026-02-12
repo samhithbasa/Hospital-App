@@ -15,4 +15,5 @@
 local.properties
 *.apk
 !app/release/app-release.apk
+!releases/HospitalApp.apk
 *.dex
