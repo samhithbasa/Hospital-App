@@ -203,16 +203,21 @@ public class MainActivity extends AppCompatActivity {
                 FirebaseAuth.getInstance().sendPasswordResetEmail(email)
                         .addOnCompleteListener(task -> {
                             if (task.isSuccessful()) {
-                                Toast.makeText(MainActivity.this,
-                                        "Password reset email sent! Please check your inbox and spam folder.",
-                                        Toast.LENGTH_LONG).show();
+                                new AlertDialog.Builder(MainActivity.this)
+                                        .setTitle("Email Sent")
+                                        .setMessage(
+                                                "Password reset email sent! Please check your inbox and spam folder.")
+                                        .setPositiveButton("OK", null)
+                                        .show();
                             } else {
                                 String errorMsg = task.getException() != null ? task.getException().getMessage()
                                         : "Unknown error";
-                                Toast.makeText(MainActivity.this,
-                                        "Error sending reset email: " + errorMsg +
-                                                "\n\nPlease verify:\n1. Email is registered\n2. Internet connection\n3. Check spam folder",
-                                        Toast.LENGTH_LONG).show();
+                                new AlertDialog.Builder(MainActivity.this)
+                                        .setTitle("Error")
+                                        .setMessage("Error sending reset email: " + errorMsg +
+                                                "\n\nPlease verify:\n1. Email is registered\n2. Internet connection\n3. Check spam folder")
+                                        .setPositiveButton("OK", null)
+                                        .show();
                             }
                         });
             }
