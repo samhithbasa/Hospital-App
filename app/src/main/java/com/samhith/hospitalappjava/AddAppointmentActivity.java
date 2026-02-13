@@ -6,6 +6,8 @@ import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Build;
+import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -170,7 +172,25 @@ public class AddAppointmentActivity extends AppCompatActivity {
 
                 AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
                 if (alarmManager != null) {
-                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
+                    // Check if we can schedule exact alarms on Android 12+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        if (alarmManager.canScheduleExactAlarms()) {
+                            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis,
+                                    pendingIntent);
+                            Log.d("AddAppointment", "Alarm scheduled for: " + appointmentDate);
+                            Toast.makeText(this, "Reminder set for 10 minutes before appointment", Toast.LENGTH_SHORT)
+                                    .show();
+                        } else {
+                            Log.w("AddAppointment", "Cannot schedule exact alarms - permission denied");
+                            Toast.makeText(this, "Please enable exact alarm permission in Settings for reminders",
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    } else {
+                        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
+                        Log.d("AddAppointment", "Alarm scheduled for: " + appointmentDate);
+                        Toast.makeText(this, "Reminder set for 10 minutes before appointment", Toast.LENGTH_SHORT)
+                                .show();
+                    }
                 }
             }
         } catch (ParseException e) {
