@@ -6,7 +6,7 @@ A comprehensive Android application for managing hospital operations including p
 ## 📥 Download
 
 You can download the latest APK from the releases folder: 
-**[Download HospitalApp.apk](https://github.com/samhithbasa/Hospital-App/raw/main/releases/HospitalApp.apk)**
+**[Download HospitalApp.apk](https://github.com/samhithbasa/Hospital-App/raw/main/app/release/app-release.apk)**
 
 ## 📱 Features
 
@@ -226,7 +226,7 @@ Output: `app/build/outputs/bundle/release/app-release.aab`
 
 ## 🐛 Known Issues & Limitations
 
-- Single device usage (no sync across devices)
+- None (Cloud sync enabled across devices)
 
 ## 🔮 Future Enhancements
 
