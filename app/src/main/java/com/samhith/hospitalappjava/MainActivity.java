@@ -15,6 +15,8 @@ import androidx.core.content.ContextCompat;
 import com.google.firebase.auth.FirebaseAuth;
 import android.widget.LinearLayout;
 import androidx.appcompat.app.AlertDialog;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkManager;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -62,6 +64,12 @@ public class MainActivity extends AppCompatActivity {
                 intent.putExtra("USER_ROLE", role);
                 intent.putExtra("USER_ID", userId);
                 startActivity(intent);
+
+                // Trigger automatic cloud sync after successful login
+                Toast.makeText(this, "Syncing data from cloud...", Toast.LENGTH_SHORT).show();
+                OneTimeWorkRequest restoreRequest = new OneTimeWorkRequest.Builder(RestoreWorker.class).build();
+                WorkManager.getInstance(this).enqueue(restoreRequest);
+
                 finish();
             } else {
                 errorText.setText(R.string.invalid_credentials);
@@ -130,10 +138,16 @@ public class MainActivity extends AppCompatActivity {
                 FirebaseAuth.getInstance().sendPasswordResetEmail(email)
                         .addOnCompleteListener(task -> {
                             if (task.isSuccessful()) {
-                                Toast.makeText(MainActivity.this, "Reset email sent!", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(MainActivity.this,
+                                        "Password reset email sent! Please check your inbox and spam folder.",
+                                        Toast.LENGTH_LONG).show();
                             } else {
-                                Toast.makeText(MainActivity.this, "Error: " + task.getException().getMessage(),
-                                        Toast.LENGTH_SHORT).show();
+                                String errorMsg = task.getException() != null ? task.getException().getMessage()
+                                        : "Unknown error";
+                                Toast.makeText(MainActivity.this,
+                                        "Error sending reset email: " + errorMsg +
+                                                "\n\nPlease verify:\n1. Email is registered\n2. Internet connection\n3. Check spam folder",
+                                        Toast.LENGTH_LONG).show();
                             }
                         });
             }
