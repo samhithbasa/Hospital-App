@@ -4,6 +4,14 @@ import android.os.Bundle;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.pdf.PdfDocument;
+import android.content.ContentValues;
+import android.net.Uri;
+import android.os.Environment;
+import android.provider.MediaStore;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,6 +49,8 @@ public class ReportsActivity extends AppCompatActivity {
         }
 
         loadReports();
+
+        findViewById(R.id.exportPdfBtn).setOnClickListener(v -> generatePDF());
     }
 
     private void loadReports() {
@@ -59,8 +69,10 @@ public class ReportsActivity extends AppCompatActivity {
         int nurseCount = 0;
 
         for (Staff s : staffList) {
-            if (s.getRole().equalsIgnoreCase("doctor")) doctorCount++;
-            else if (s.getRole().equalsIgnoreCase("nurse")) nurseCount++;
+            if (s.getRole().equalsIgnoreCase("doctor"))
+                doctorCount++;
+            else if (s.getRole().equalsIgnoreCase("nurse"))
+                nurseCount++;
         }
 
         if ("admin".equalsIgnoreCase(userRole)) {
@@ -134,11 +146,84 @@ public class ReportsActivity extends AppCompatActivity {
         String date = a.getDate() != null ? a.getDate() : "N/A";
         String timeInfo = isUpcoming
                 ? getString(R.string.scheduled_for_time, a.getTime() != null ? a.getTime() : "N/A")
-                : getString(R.string.status_updated_at, a.getStatusUpdateTime() != null ? a.getStatusUpdateTime() : "N/A");
+                : getString(R.string.status_updated_at,
+                        a.getStatusUpdateTime() != null ? a.getStatusUpdateTime() : "N/A");
 
         return "• " + patient + "\n" +
                 "  " + getString(R.string.with_doctor, doctor) + "\n" +
                 "  " + getString(R.string.on_date, date) + "\n" +
                 "  " + timeInfo + "\n\n";
+    }
+
+    private void generatePDF() {
+        PdfDocument document = new PdfDocument();
+        PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(595, 842, 1).create();
+        PdfDocument.Page page = document.startPage(pageInfo);
+        Canvas canvas = page.getCanvas();
+        Paint paint = new Paint();
+
+        int x = 40, y = 50;
+        paint.setTextSize(24f);
+        paint.setFakeBoldText(true);
+        canvas.drawText("Hospital Management Report", x, y, paint);
+        y += 40;
+
+        paint.setTextSize(16f);
+        paint.setFakeBoldText(false);
+        canvas.drawText(tvPatientCount.getText().toString(), x, y, paint);
+        y += 25;
+        canvas.drawText(tvStaffCount.getText().toString(), x, y, paint);
+        y += 25;
+        canvas.drawText(tvDoctorCount.getText().toString(), x, y, paint);
+        y += 25;
+        canvas.drawText(tvNurseCount.getText().toString(), x, y, paint);
+        y += 25;
+        canvas.drawText(tvAppointmentCount.getText().toString(), x, y, paint);
+        y += 40;
+
+        paint.setFakeBoldText(true);
+        canvas.drawText("Appointments Details:", x, y, paint);
+        y += 25;
+        paint.setFakeBoldText(false);
+        paint.setTextSize(12f);
+
+        String[] appointments = (tvUpcomingAppointments.getText().toString() + "\n" +
+                tvCompletedAppointments.getText().toString() + "\n" +
+                tvCanceledAppointments.getText().toString()).split("\n");
+
+        for (String line : appointments) {
+            if (y > 800) {
+                document.finishPage(page);
+                pageInfo = new PdfDocument.PageInfo.Builder(595, 842, document.getPages().size() + 1).create();
+                page = document.startPage(pageInfo);
+                canvas = page.getCanvas();
+                y = 50;
+            }
+            canvas.drawText(line, x, y, paint);
+            y += 20;
+        }
+
+        document.finishPage(page);
+
+        String fileName = "Hospital_Report_" + System.currentTimeMillis() + ".pdf";
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
+        values.put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf");
+        values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+
+        Uri uri = getContentResolver().insert(MediaStore.Files.getContentUri("external"), values);
+
+        try {
+            if (uri != null) {
+                OutputStream out = getContentResolver().openOutputStream(uri);
+                document.writeTo(out);
+                document.close();
+                out.close();
+                Toast.makeText(this, "PDF Exported to Downloads", Toast.LENGTH_LONG).show();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Error exporting PDF: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
     }
 }

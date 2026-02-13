@@ -72,6 +72,17 @@
         app:strokeWidth="1dp"
         app:elevation="4dp"/>
 
+    <!-- Forgot Password Link -->
+    <TextView
+        android:id="@+id/forgotPasswordText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Forgot Password?"
+        android:textColor="@color/primary_color"
+        android:layout_marginTop="16dp"
+        android:textStyle="bold"
+        android:padding="8dp" />
+
     <!-- Error Messages -->
     <TextView
         android:id="@+id/errorText"

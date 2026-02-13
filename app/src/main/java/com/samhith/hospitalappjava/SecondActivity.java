@@ -8,14 +8,19 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.util.Log;
 
+import android.content.SharedPreferences;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
+import com.google.android.material.switchmaterial.SwitchMaterial;
+import java.util.concurrent.TimeUnit;
 
 public class SecondActivity extends AppCompatActivity {
 
     private static final String TAG = "SecondActivity";
     private int userId;
     private String userRole;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,9 +33,33 @@ public class SecondActivity extends AppCompatActivity {
         Button viewReportsBtn = findViewById(R.id.viewReportsBtn);
         Button logoutBtn = findViewById(R.id.logoutBtn);
         Button backBtn = findViewById(R.id.backBtn);
+        SwitchMaterial darkModeSwitch = findViewById(R.id.darkModeSwitch);
+
+        // Dark Mode Logic
+        SharedPreferences sharedPreferences = getSharedPreferences("ThemePrefs", MODE_PRIVATE);
+        boolean isDarkMode = sharedPreferences.getBoolean("isDarkMode", false);
+        darkModeSwitch.setChecked(isDarkMode);
+
+        // Schedule Cloud Backup
+        PeriodicWorkRequest backupRequest = new PeriodicWorkRequest.Builder(
+                BackupWorker.class, 15, TimeUnit.MINUTES)
+                .build();
+        WorkManager.getInstance(this).enqueue(backupRequest);
+
+        darkModeSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putBoolean("isDarkMode", isChecked);
+            editor.apply();
+
+            if (isChecked) {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+            } else {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+            }
+        });
 
         userId = getIntent().getIntExtra("USER_ID", -1);
-        
+
         if (userId == -1) {
             Log.e(TAG, "Invalid user ID received");
             Toast.makeText(this, "Error: Invalid user session", Toast.LENGTH_SHORT).show();

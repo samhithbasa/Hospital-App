@@ -7,6 +7,9 @@ import android.widget.EditText;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import com.google.firebase.auth.FirebaseAuth;
+import android.widget.LinearLayout;
+import androidx.appcompat.app.AlertDialog;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -27,8 +30,11 @@ public class MainActivity extends AppCompatActivity {
         signUpButton = findViewById(R.id.signUP);
         errorText = findViewById(R.id.errorText);
         signupSuccessText = findViewById(R.id.signup_success);
+        TextView forgotPasswordText = findViewById(R.id.forgotPasswordText);
 
         dbHelper = new DatabaseHelper(this);
+
+        forgotPasswordText.setOnClickListener(v -> showForgotPasswordDialog());
 
         // Add admin user if not exists
         if (dbHelper.getUserRole("admin") == null) {
@@ -62,21 +68,24 @@ public class MainActivity extends AppCompatActivity {
 
             if (username.isEmpty() || password.isEmpty()) {
                 signupSuccessText.setText(R.string.fill_all_fields);
-                signupSuccessText.setTextColor(ContextCompat.getColor(MainActivity.this, android.R.color.holo_red_dark));
+                signupSuccessText
+                        .setTextColor(ContextCompat.getColor(MainActivity.this, android.R.color.holo_red_dark));
                 return;
             }
 
             // Check: password must not contain username
             if (password.toLowerCase().contains(username.toLowerCase())) {
                 signupSuccessText.setText("Password should not contain username.");
-                signupSuccessText.setTextColor(ContextCompat.getColor(MainActivity.this, android.R.color.holo_red_dark));
+                signupSuccessText
+                        .setTextColor(ContextCompat.getColor(MainActivity.this, android.R.color.holo_red_dark));
                 return;
             }
 
             // Optional: Check for minimum password length
             if (password.length() < 8) {
                 signupSuccessText.setText("Password must be at least 8 characters long.");
-                signupSuccessText.setTextColor(ContextCompat.getColor(MainActivity.this, android.R.color.holo_red_dark));
+                signupSuccessText
+                        .setTextColor(ContextCompat.getColor(MainActivity.this, android.R.color.holo_red_dark));
                 return;
             }
 
@@ -84,13 +93,45 @@ public class MainActivity extends AppCompatActivity {
 
             if (result != -1) {
                 signupSuccessText.setText(R.string.signup_success);
-                signupSuccessText.setTextColor(ContextCompat.getColor(MainActivity.this, android.R.color.holo_green_dark));
+                signupSuccessText
+                        .setTextColor(ContextCompat.getColor(MainActivity.this, android.R.color.holo_green_dark));
                 usernameEditText.setText("");
                 passwordEditText.setText("");
             } else {
                 signupSuccessText.setText(R.string.username_exists);
-                signupSuccessText.setTextColor(ContextCompat.getColor(MainActivity.this, android.R.color.holo_red_dark));
+                signupSuccessText
+                        .setTextColor(ContextCompat.getColor(MainActivity.this, android.R.color.holo_red_dark));
             }
         });
+    }
+
+    private void showForgotPasswordDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Reset Password");
+
+        final EditText input = new EditText(this);
+        input.setHint("Enter your email");
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT);
+        input.setLayoutParams(lp);
+        builder.setView(input);
+
+        builder.setPositiveButton("Send Reset Link", (dialog, which) -> {
+            String email = input.getText().toString().trim();
+            if (!email.isEmpty()) {
+                FirebaseAuth.getInstance().sendPasswordResetEmail(email)
+                        .addOnCompleteListener(task -> {
+                            if (task.isSuccessful()) {
+                                Toast.makeText(MainActivity.this, "Reset email sent!", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(MainActivity.this, "Error: " + task.getException().getMessage(),
+                                        Toast.LENGTH_SHORT).show();
+                            }
+                        });
+            }
+        });
+        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
+        builder.show();
     }
 }

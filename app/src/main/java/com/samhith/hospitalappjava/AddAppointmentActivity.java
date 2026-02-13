@@ -1,6 +1,10 @@
 package com.samhith.hospitalappjava;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.app.TimePickerDialog;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -12,8 +16,10 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.datepicker.MaterialDatePicker;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -135,10 +141,40 @@ public class AddAppointmentActivity extends AppCompatActivity {
         long result = databaseHelper.addAppointment(patientId, doctorId, date, time, purpose, userId);
 
         if (result != -1) {
+            scheduleReminder(patientList.get(spinnerPatients.getSelectedItemPosition()).getName(), date, time);
             Toast.makeText(this, "Appointment added successfully", Toast.LENGTH_SHORT).show();
             finish();
         } else {
             Toast.makeText(this, "Error adding appointment", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void scheduleReminder(String patientName, String date, String time) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
+        try {
+            Date appointmentDate = sdf.parse(date + " " + time);
+            if (appointmentDate != null) {
+                long triggerAtMillis = appointmentDate.getTime() - (10 * 60 * 1000); // 10 minutes before
+
+                if (triggerAtMillis < System.currentTimeMillis()) {
+                    triggerAtMillis = System.currentTimeMillis() + 1000; // If already passed, set for 1s later
+                }
+
+                Intent intent = new Intent(this, ReminderReceiver.class);
+                intent.putExtra("PATIENT_NAME", patientName);
+                intent.putExtra("APPOINTMENT_TIME", time);
+
+                PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                        this, (int) System.currentTimeMillis(), intent,
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+                AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+                if (alarmManager != null) {
+                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
+                }
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
         }
     }
 }
