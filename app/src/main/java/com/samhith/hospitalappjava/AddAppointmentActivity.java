@@ -146,7 +146,8 @@ public class AddAppointmentActivity extends AppCompatActivity {
         long result = databaseHelper.addAppointment(patientId, doctorId, date, time, purpose, userId);
 
         if (result != -1) {
-            scheduleReminder(patientList.get(spinnerPatients.getSelectedItemPosition()).getName(), date, time);
+            scheduleReminder((int) result, patientList.get(spinnerPatients.getSelectedItemPosition()).getName(), date,
+                    time);
             Toast.makeText(this, "Appointment added successfully", Toast.LENGTH_SHORT).show();
             finish();
         } else {
@@ -154,7 +155,7 @@ public class AddAppointmentActivity extends AppCompatActivity {
         }
     }
 
-    private void scheduleReminder(String patientName, String date, String time) {
+    private void scheduleReminder(int appointmentId, String patientName, String date, String time) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
         try {
             Date appointmentDate = sdf.parse(date + " " + time);
@@ -170,7 +171,7 @@ public class AddAppointmentActivity extends AppCompatActivity {
                 intent.putExtra("APPOINTMENT_TIME", time);
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(
-                        this, (int) System.currentTimeMillis(), intent,
+                        this, appointmentId, intent,
                         PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
                 AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);

@@ -51,46 +51,73 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Login functionality
+        // Login functionality
         loginButton.setOnClickListener(view -> {
-            String username = usernameEditText.getText().toString().trim();
+            String email = usernameEditText.getText().toString().trim();
             String password = passwordEditText.getText().toString().trim();
 
-            if (dbHelper.checkUser(username, password)) {
-                String role = dbHelper.getUserRole(username);
-                int userId = dbHelper.getUserId(username);
+            if (email.isEmpty() || password.isEmpty()) {
+                errorText.setText(R.string.fill_all_fields);
+                return;
+            }
 
-                Intent intent = new Intent(MainActivity.this, SecondActivity.class);
-                intent.putExtra("USERNAME", username);
-                intent.putExtra("USER_ROLE", role);
-                intent.putExtra("USER_ID", userId);
-                startActivity(intent);
-
-                // Trigger automatic cloud sync after successful login
-                Toast.makeText(this, "Syncing data from cloud...", Toast.LENGTH_SHORT).show();
-                OneTimeWorkRequest restoreRequest = new OneTimeWorkRequest.Builder(RestoreWorker.class).build();
-                WorkManager.getInstance(this).enqueue(restoreRequest);
-
-                finish();
+            // 1. Try Local Login first
+            if (dbHelper.checkUser(email, password)) {
+                loginSuccess(email);
             } else {
-                errorText.setText(R.string.invalid_credentials);
+                // 2. Try Firebase Auth (Cloud Login)
+                Toast.makeText(this, "Verifying with cloud...", Toast.LENGTH_SHORT).show();
+                FirebaseAuth.getInstance().signInWithEmailAndPassword(email, password)
+                        .addOnCompleteListener(task -> {
+                            if (task.isSuccessful()) {
+                                // Cloud login success!
+                                // Now we need to restore data to local DB so the app works
+                                Toast.makeText(this, "Cloud login successful! Syncing data...", Toast.LENGTH_LONG)
+                                        .show();
+
+                                // Trigger Restore
+                                OneTimeWorkRequest restoreRequest = new OneTimeWorkRequest.Builder(RestoreWorker.class)
+                                        .build();
+                                WorkManager.getInstance(this).enqueue(restoreRequest);
+
+                                // Monitor restore progress or just let user wait?
+                                // For better UX, we'll watch the worker
+                                WorkManager.getInstance(this).getWorkInfoByIdLiveData(restoreRequest.getId())
+                                        .observe(this, workInfo -> {
+                                            if (workInfo != null && workInfo.getState().isFinished()) {
+                                                if (workInfo.getState() == androidx.work.WorkInfo.State.SUCCEEDED) {
+                                                    // Ensure user exists locally now (restored from backup_users)
+                                                    // The password hash should matched.
+                                                    // Proceed to dashboard
+                                                    loginSuccess(email);
+                                                } else {
+                                                    errorText.setText("Sync failed. Check internet.");
+                                                }
+                                            }
+                                        });
+
+                            } else {
+                                errorText.setText("Invalid credentials or user not found.");
+                            }
+                        });
             }
         });
 
         // Sign-up functionality with password validation
         signUpButton.setOnClickListener(view -> {
-            String username = usernameEditText.getText().toString().trim();
+            String email = usernameEditText.getText().toString().trim();
             String password = passwordEditText.getText().toString().trim();
 
-            if (username.isEmpty() || password.isEmpty()) {
+            if (email.isEmpty() || password.isEmpty()) {
                 signupSuccessText.setText(R.string.fill_all_fields);
                 signupSuccessText
                         .setTextColor(ContextCompat.getColor(MainActivity.this, android.R.color.holo_red_dark));
                 return;
             }
 
-            // Check: password must not contain username
-            if (password.toLowerCase().contains(username.toLowerCase())) {
-                signupSuccessText.setText("Password should not contain username.");
+            // Check: password must not contain username (email)
+            if (password.toLowerCase().contains(email.toLowerCase())) {
+                signupSuccessText.setText("Password should not contain email.");
                 signupSuccessText
                         .setTextColor(ContextCompat.getColor(MainActivity.this, android.R.color.holo_red_dark));
                 return;
@@ -104,20 +131,58 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-            long result = dbHelper.addUser(username, password, "staff");
+            // Create Firebase Auth user first
+            FirebaseAuth.getInstance().createUserWithEmailAndPassword(email, password)
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            // Firebase Auth created, now create local user
+                            long result = dbHelper.addUser(email, password, "staff");
 
-            if (result != -1) {
-                signupSuccessText.setText(R.string.signup_success);
-                signupSuccessText
-                        .setTextColor(ContextCompat.getColor(MainActivity.this, android.R.color.holo_green_dark));
-                usernameEditText.setText("");
-                passwordEditText.setText("");
-            } else {
-                signupSuccessText.setText(R.string.username_exists);
-                signupSuccessText
-                        .setTextColor(ContextCompat.getColor(MainActivity.this, android.R.color.holo_red_dark));
-            }
+                            if (result != -1) {
+                                signupSuccessText.setText(R.string.signup_success);
+                                signupSuccessText
+                                        .setTextColor(ContextCompat.getColor(MainActivity.this,
+                                                android.R.color.holo_green_dark));
+                                usernameEditText.setText("");
+                                passwordEditText.setText("");
+                            } else {
+                                signupSuccessText.setText("Local user creation failed (exists?)");
+                                signupSuccessText
+                                        .setTextColor(ContextCompat.getColor(MainActivity.this,
+                                                android.R.color.holo_red_dark));
+                            }
+                        } else {
+                            String error = task.getException() != null ? task.getException().getMessage()
+                                    : "Unknown error";
+                            signupSuccessText.setText("Registration failed: " + error);
+                            signupSuccessText
+                                    .setTextColor(
+                                            ContextCompat.getColor(MainActivity.this, android.R.color.holo_red_dark));
+                        }
+                    });
         });
+    }
+
+    private void loginSuccess(String email) {
+        String role = dbHelper.getUserRole(email);
+        int userId = dbHelper.getUserId(email);
+
+        // Fallback for role if null (e.g. freshly restored/created)
+        if (role == null)
+            role = "staff";
+
+        Intent intent = new Intent(MainActivity.this, SecondActivity.class);
+        intent.putExtra("USERNAME", email);
+        intent.putExtra("USER_ROLE", role);
+        intent.putExtra("USER_ID", userId);
+        startActivity(intent);
+
+        // Trigger automatic cloud sync after successful login
+        Toast.makeText(this, "Syncing data from cloud...", Toast.LENGTH_SHORT).show();
+        OneTimeWorkRequest restoreRequest = new OneTimeWorkRequest.Builder(RestoreWorker.class).build();
+        WorkManager.getInstance(this).enqueue(restoreRequest);
+
+        finish();
     }
 
     private void showForgotPasswordDialog() {

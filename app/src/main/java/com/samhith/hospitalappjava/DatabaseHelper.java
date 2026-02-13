@@ -8,6 +8,8 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteConstraintException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import org.mindrot.jbcrypt.BCrypt;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
@@ -210,6 +212,43 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             return role;
         }
         return null;
+    }
+
+    // Add this method for restoring users without re-hashing
+    public long restoreUser(String username, String hashedPassword, String role) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(KEY_USERNAME, username);
+        values.put(KEY_PASSWORD, hashedPassword); // Already hashed
+        values.put(KEY_ROLE, role);
+
+        try {
+            return db.insertOrThrow(TABLE_USERS, null, values);
+        } catch (SQLiteConstraintException e) {
+            // User already exists, update role/password if needed?
+            // For now, return -1 as it exists
+            return -1;
+        }
+    }
+
+    public List<Map<String, String>> getAllUsers() {
+        List<Map<String, String>> userList = new ArrayList<>();
+        String selectQuery = "SELECT * FROM " + TABLE_USERS;
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(selectQuery, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                Map<String, String> user = new HashMap<>();
+                // 0 is ID, 1 is Username, 2 is Password, 3 is Role
+                user.put("username", cursor.getString(1));
+                user.put("password", cursor.getString(2));
+                user.put("role", cursor.getString(3));
+                userList.add(user);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return userList;
     }
 
     // Patient management methods
