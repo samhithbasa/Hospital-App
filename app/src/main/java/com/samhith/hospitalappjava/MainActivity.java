@@ -6,6 +6,10 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.core.app.ActivityCompat;
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import com.google.firebase.auth.FirebaseAuth;
@@ -34,6 +38,8 @@ public class MainActivity extends AppCompatActivity {
         TextView forgotPasswordText = findViewById(R.id.forgotPasswordText);
 
         dbHelper = new DatabaseHelper(this);
+
+        requestNotificationPermission();
 
         forgotPasswordText.setOnClickListener(v -> showForgotPasswordDialog());
 
@@ -134,5 +140,14 @@ public class MainActivity extends AppCompatActivity {
         });
         builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
         builder.show();
+    }
+
+    private void requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.POST_NOTIFICATIONS }, 101);
+            }
+        }
     }
 }

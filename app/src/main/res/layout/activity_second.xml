@@ -82,16 +82,26 @@
 
             <!-- View Reports Button -->
             <Button
-                android:id="@+id/viewReportsBtn"
+                android:id="@+id/reportsBtn"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="View Reports"
+                android:text="Reports"
                 android:textSize="18sp"
                 android:backgroundTint="@color/primary_color"
                 android:textColor="@android:color/white"
                 android:layout_marginBottom="16dp"
                 android:padding="16dp"/>
 
+            <Button
+                android:id="@+id/syncDataBtn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Sync Data from Cloud"
+                android:textSize="18sp"
+                android:backgroundTint="@color/primary_color"
+                android:textColor="@android:color/white"
+                android:layout_marginBottom="16dp"
+                android:padding="16dp"/>
         </LinearLayout>
 
     </LinearLayout>

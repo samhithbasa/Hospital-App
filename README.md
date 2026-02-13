@@ -39,9 +39,10 @@ You can download the latest APK from the releases folder:
 - Generate reports on appointments by status
 - View patient and staff statistics
 - Filter appointments by status (scheduled, completed, canceled)
-- **PDF Export**: Export comprehensive hospital reports to the device downloads folder
+- **PDF Export**: Export comprehensive hospital reports to the device **Downloads folder** (`/storage/emulated/0/Download/`)
 - **Dark Mode**: Toggleable dark theme with state persistence
 - **Cloud Backup**: Periodic background synchronization of SQLite data to Firebase Firestore
+- **Cloud Restore**: Pull data from Firestore to sync across multiple devices
 
 ## 🛠️ Tech Stack
 
