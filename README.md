@@ -11,8 +11,9 @@ You can download the latest APK from the releases folder:
 ## 📱 Features
 
 ### User Management
-- **Multi-role Authentication**: Admin and Staff roles with secure login
-- **User Registration**: New staff can sign up with password validation
+- **Multi-role Authentication**: Admin and Staff roles with secure login using **BCrypt hashing**
+- **User Registration**: New staff can sign up with password validation and secure storage
+- **Forgot Password**: Implementation of reset password flow via Firebase Email
 - **Role-based Access Control**: Different permissions for admin and staff users
 
 ### Patient Management
@@ -31,18 +32,26 @@ You can download the latest APK from the releases folder:
 - View appointments by user or doctor
 - Edit and manage appointment details
 - Status update tracking with timestamps
+- **Appointment Reminders**: Local notifications 10 minutes before scheduled time
+- **Push Notifications**: Integrated Firebase Cloud Messaging for system alerts
 
 ### Reports & Analytics
 - Generate reports on appointments by status
 - View patient and staff statistics
 - Filter appointments by status (scheduled, completed, canceled)
+- **PDF Export**: Export comprehensive hospital reports to the device downloads folder
+- **Dark Mode**: Toggleable dark theme with state persistence
+- **Cloud Backup**: Periodic background synchronization of SQLite data to Firebase Firestore
 
 ## 🛠️ Tech Stack
 
 - **Language**: Java
 - **Platform**: Android (API 24+, Target API 35)
-- **Database**: SQLite
-- **UI Components**: Material Design, CardView
+- **Database**: SQLite (local) + **Firebase Firestore (Cloud Backup)**
+- **Authentication**: **jBCrypt 0.4** (password hashing) + **Firebase Auth**
+- **Notifications**: **Firebase Cloud Messaging (FCM)** + AlarmManager
+- **UI Components**: Material Design 3, CardView, **SwitchMaterial**
+- **Background Tasks**: **WorkManager** (for periodic cloud sync)
 - **Image Loading**: Glide 4.16.0
 - **Build System**: Gradle with Version Catalogs
 - **View Binding**: Enabled for type-safe view access
@@ -209,25 +218,24 @@ Output: `app/build/outputs/bundle/release/app-release.aab`
 
 - **Password Validation**: Minimum 8 characters, cannot contain username
 - **User Isolation**: Staff users can only access their own data
-- **Admin Access**: Full access to all records
-- **Database**: Local SQLite storage (consider encryption for production)
+- **Admin Access**:- Full access to all records
+- **Secure Storage**: All user passwords are encrypted using BCrypt
+- **Privacy**: User-specific data isolation
+- **Cloud Sync**: Optional background backup to Firebase
 
 ## 🐛 Known Issues & Limitations
 
-- No password encryption (plain text storage - **not recommended for production**)
-- No network/cloud backup
 - Single device usage (no sync across devices)
-- No forgot password functionality
 
 ## 🔮 Future Enhancements
 
-- [ ] Implement password hashing (BCrypt/Argon2)
-- [ ] Add cloud backup/sync (Firebase)
-- [ ] Implement forgot password via email
-- [ ] Add push notifications for appointments
-- [ ] Export reports to PDF
-- [ ] Add appointment reminders
-- [ ] Implement dark mode
+- [x] Implement password hashing (BCrypt)
+- [x] Add cloud backup/sync (Firebase)
+- [x] Implement forgot password via email
+- [x] Add push notifications for appointments
+- [x] Export reports to PDF
+- [x] Add appointment reminders
+- [x] Implement dark mode
 
 ## 📄 License
 

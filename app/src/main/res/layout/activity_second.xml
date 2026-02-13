@@ -9,6 +9,14 @@
     tools:context=".SecondActivity">
 
     <!-- Welcome Message -->
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/darkModeSwitch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:text="Dark Mode"
+        android:layout_marginBottom="8dp"/>
+
     <!-- Main Buttons Container -->
     <LinearLayout
         android:layout_width="match_parent"

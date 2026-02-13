@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteConstraintException;
 import java.util.ArrayList;
 import java.util.List;
+import org.mindrot.jbcrypt.BCrypt;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "hospital.db";
@@ -55,7 +56,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
-
     @Override
     public void onCreate(SQLiteDatabase db) {
         // Create users table
@@ -101,7 +101,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + KEY_PHONE + " TEXT,"
                 + KEY_JOIN_DATE + " TEXT,"
                 + KEY_ADDRESS + " TEXT,"
-                + "photoPath TEXT,"  // 👈 Add this line
+                + "photoPath TEXT," // 👈 Add this line
                 + "user_id INTEGER" + ")";
         db.execSQL(CREATE_STAFF_TABLE);
     }
@@ -132,7 +132,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(KEY_USERNAME, username);
-        values.put(KEY_PASSWORD, password);
+        // Hash the password before storing
+        String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+        values.put(KEY_PASSWORD, hashedPassword);
         values.put(KEY_ROLE, role);
 
         try {
@@ -145,9 +147,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public int getUserId(String username) {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.query(TABLE_USERS,
-                new String[]{KEY_ID},
+                new String[] { KEY_ID },
                 KEY_USERNAME + "=?",
-                new String[]{username},
+                new String[] { username },
                 null, null, null);
 
         if (cursor != null && cursor.moveToFirst()) {
@@ -160,18 +162,46 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public boolean checkUser(String username, String password) {
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_USERS + " WHERE " +
-                        KEY_USERNAME + "=? AND " + KEY_PASSWORD + "=?",
-                new String[]{username, password});
-        boolean exists = cursor.getCount() > 0;
+        Cursor cursor = db.rawQuery("SELECT " + KEY_PASSWORD + " FROM " + TABLE_USERS + " WHERE " +
+                KEY_USERNAME + "=?",
+                new String[] { username });
+
+        boolean exists = false;
+        if (cursor.moveToFirst()) {
+            String storedPassword = cursor.getString(0);
+            try {
+                // Check if the stored password is a BCrypt hash
+                if (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2b$")
+                        || storedPassword.startsWith("$2y$")) {
+                    exists = BCrypt.checkpw(password, storedPassword);
+                } else {
+                    // Plain text check (for migration)
+                    if (storedPassword.equals(password)) {
+                        exists = true;
+                        // Upgrade to hashed password
+                        upgradePassword(username, password);
+                    }
+                }
+            } catch (Exception e) {
+                // In case of malformed hash
+                exists = storedPassword.equals(password);
+            }
+        }
         cursor.close();
         return exists;
     }
 
+    private void upgradePassword(String username, String password) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(KEY_PASSWORD, BCrypt.hashpw(password, BCrypt.gensalt()));
+        db.update(TABLE_USERS, values, KEY_USERNAME + "=?", new String[] { username });
+    }
+
     public String getUserRole(String username) {
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.query(TABLE_USERS, new String[]{KEY_ROLE},
-                KEY_USERNAME + "=?", new String[]{username},
+        Cursor cursor = db.query(TABLE_USERS, new String[] { KEY_ROLE },
+                KEY_USERNAME + "=?", new String[] { username },
                 null, null, null);
 
         if (cursor != null && cursor.moveToFirst()) {
@@ -184,7 +214,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     // Patient management methods
     public long addPatient(String name, int age, String gender, String address,
-                           String phone, String medicalHistory, int userId) {
+            String phone, String medicalHistory, int userId) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(KEY_PATIENT_NAME, name);
@@ -203,7 +233,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         String query = "SELECT * FROM " + TABLE_PATIENTS + " WHERE user_id = ?";
 
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery(query, new String[]{String.valueOf(userId)});
+        Cursor cursor = db.rawQuery(query, new String[] { String.valueOf(userId) });
 
         if (cursor.moveToFirst()) {
             do {
@@ -223,7 +253,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public boolean updatePatient(int id, String name, int age, String gender,
-                                 String address, String phone, String medicalHistory) {
+            String address, String phone, String medicalHistory) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(KEY_PATIENT_NAME, name);
@@ -235,11 +265,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         int rowsAffected = db.update(TABLE_PATIENTS, values,
                 KEY_ID + " = ?",
-                new String[]{String.valueOf(id)});
+                new String[] { String.valueOf(id) });
         return rowsAffected > 0;
     }
-
-
 
     public List<Patient> getAllPatients() {
         List<Patient> patientList = new ArrayList<>();
@@ -268,10 +296,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public Patient getPatientById(int id) {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.query(TABLE_PATIENTS,
-                new String[]{KEY_ID, KEY_PATIENT_NAME, KEY_AGE, KEY_GENDER,
-                        KEY_ADDRESS, KEY_PHONE, KEY_MEDICAL_HISTORY},
+                new String[] { KEY_ID, KEY_PATIENT_NAME, KEY_AGE, KEY_GENDER,
+                        KEY_ADDRESS, KEY_PHONE, KEY_MEDICAL_HISTORY },
                 KEY_ID + "=?",
-                new String[]{String.valueOf(id)},
+                new String[] { String.valueOf(id) },
                 null, null, null);
 
         if (cursor.moveToFirst()) {
@@ -294,18 +322,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         // First delete related appointments to maintain referential integrity
         db.delete(TABLE_APPOINTMENTS, KEY_PATIENT_ID + " = ?",
-                new String[]{String.valueOf(patientId)});
+                new String[] { String.valueOf(patientId) });
 
         // Then delete the patient
         int rowsAffected = db.delete(TABLE_PATIENTS, KEY_ID + " = ?",
-                new String[]{String.valueOf(patientId)});
+                new String[] { String.valueOf(patientId) });
 
         return rowsAffected > 0;
     }
 
     // Appointment management methods
     public long addAppointment(int patientId, int doctorId, String date,
-                               String time, String purpose, int userId) {
+            String time, String purpose, int userId) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(KEY_PATIENT_ID, patientId);
@@ -329,7 +357,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "WHERE a.user_id = ?";
 
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery(query, new String[]{String.valueOf(userId)});
+        Cursor cursor = db.rawQuery(query, new String[] { String.valueOf(userId) });
 
         if (cursor.moveToFirst()) {
             do {
@@ -351,7 +379,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return appointmentList;
     }
 
-
     // Add these methods to DatabaseHelper.java
 
     public List<Patient> getPatientsByDoctorId(int doctorId) {
@@ -361,7 +388,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "WHERE a." + KEY_DOCTOR_ID + " = ?";
 
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery(query, new String[]{String.valueOf(doctorId)});
+        Cursor cursor = db.rawQuery(query, new String[] { String.valueOf(doctorId) });
 
         if (cursor.moveToFirst()) {
             do {
@@ -389,7 +416,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "WHERE a.doctor_id = ?";
 
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery(query, new String[]{String.valueOf(doctorId)});
+        Cursor cursor = db.rawQuery(query, new String[] { String.valueOf(doctorId) });
 
         if (cursor.moveToFirst()) {
             do {
@@ -410,7 +437,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         cursor.close();
         return appointmentList;
     }
-
 
     public List<Appointment> getAllAppointments() {
         List<Appointment> appointmentList = new ArrayList<>();
@@ -440,10 +466,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public Appointment getAppointmentById(int id) {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.query(TABLE_APPOINTMENTS,
-                new String[]{KEY_ID, KEY_PATIENT_ID, KEY_DOCTOR_ID, KEY_DATE,
-                        KEY_TIME, KEY_PURPOSE, KEY_STATUS, KEY_STATUS_UPDATE_TIME},
+                new String[] { KEY_ID, KEY_PATIENT_ID, KEY_DOCTOR_ID, KEY_DATE,
+                        KEY_TIME, KEY_PURPOSE, KEY_STATUS, KEY_STATUS_UPDATE_TIME },
                 KEY_ID + "=?",
-                new String[]{String.valueOf(id)},
+                new String[] { String.valueOf(id) },
                 null, null, null);
 
         if (cursor.moveToFirst()) {
@@ -475,7 +501,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         int rowsAffected = db.update(TABLE_APPOINTMENTS, values,
                 KEY_ID + " = ?",
-                new String[]{String.valueOf(appointment.getId())});
+                new String[] { String.valueOf(appointment.getId()) });
         return rowsAffected > 0;
     }
 
@@ -501,7 +527,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 appointment.setStatus(cursor.getString(6));
                 appointment.setStatusUpdateTime(cursor.getString(7));
                 appointment.setPatientName(cursor.getString(8)); // patient_name
-                appointment.setDoctorName(cursor.getString(9));  // doctor_name
+                appointment.setDoctorName(cursor.getString(9)); // doctor_name
                 appointmentList.add(appointment);
             } while (cursor.moveToNext());
         }
@@ -517,7 +543,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "WHERE a." + KEY_ID + " = ?";
 
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery(selectQuery, new String[]{String.valueOf(id)});
+        Cursor cursor = db.rawQuery(selectQuery, new String[] { String.valueOf(id) });
 
         if (cursor.moveToFirst()) {
             Appointment appointment = new Appointment();
@@ -530,7 +556,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             appointment.setStatus(cursor.getString(6));
             appointment.setStatusUpdateTime(cursor.getString(7));
             appointment.setPatientName(cursor.getString(8)); // patient_name
-            appointment.setDoctorName(cursor.getString(9));  // doctor_name
+            appointment.setDoctorName(cursor.getString(9)); // doctor_name
             cursor.close();
             return appointment;
         }
@@ -547,7 +573,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "WHERE a.status = ?";
 
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery(query, new String[]{status});
+        Cursor cursor = db.rawQuery(query, new String[] { status });
 
         if (cursor.moveToFirst()) {
             do {
@@ -570,12 +596,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return appointmentList;
     }
 
-
-
     public boolean deleteAppointment(int appointmentId) {
         SQLiteDatabase db = this.getWritableDatabase();
         int rowsAffected = db.delete(TABLE_APPOINTMENTS, KEY_ID + " = ?",
-                new String[]{String.valueOf(appointmentId)});
+                new String[] { String.valueOf(appointmentId) });
         return rowsAffected > 0;
     }
 
@@ -608,10 +632,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public Staff getStaffByUserId(int userId) {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.query(TABLE_STAFF,
-                new String[]{KEY_ID, KEY_NAME, KEY_ROLE, KEY_DEPARTMENT,
-                        KEY_EMAIL, KEY_PHONE, KEY_JOIN_DATE, KEY_ADDRESS, KEY_PHOTO_PATH},
+                new String[] { KEY_ID, KEY_NAME, KEY_ROLE, KEY_DEPARTMENT,
+                        KEY_EMAIL, KEY_PHONE, KEY_JOIN_DATE, KEY_ADDRESS, KEY_PHOTO_PATH },
                 "user_id = ?",
-                new String[]{String.valueOf(userId)},
+                new String[] { String.valueOf(userId) },
                 null, null, null);
 
         if (cursor.moveToFirst()) {
@@ -634,7 +658,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public boolean deleteStaff(int staffId) {
         SQLiteDatabase db = this.getWritableDatabase();
         int rowsAffected = db.delete(TABLE_STAFF, KEY_ID + " = ?",
-                new String[]{String.valueOf(staffId)});
+                new String[] { String.valueOf(staffId) });
         return rowsAffected > 0;
     }
 
@@ -652,17 +676,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         int rowsAffected = db.update(TABLE_STAFF, values,
                 KEY_ID + " = ?",
-                new String[]{String.valueOf(staff.getId())});
+                new String[] { String.valueOf(staff.getId()) });
         return rowsAffected > 0;
     }
 
     public Staff getStaffById(int id) {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.query(TABLE_STAFF,
-                new String[]{KEY_ID, KEY_NAME, KEY_ROLE, KEY_DEPARTMENT,
-                        KEY_EMAIL, KEY_PHONE, KEY_JOIN_DATE, KEY_ADDRESS, KEY_PHOTO_PATH},
+                new String[] { KEY_ID, KEY_NAME, KEY_ROLE, KEY_DEPARTMENT,
+                        KEY_EMAIL, KEY_PHONE, KEY_JOIN_DATE, KEY_ADDRESS, KEY_PHOTO_PATH },
                 KEY_ID + "=?",
-                new String[]{String.valueOf(id)},
+                new String[] { String.valueOf(id) },
                 null, null, null);
 
         if (cursor.moveToFirst()) {
@@ -682,10 +706,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return null;
     }
 
-
     public long addStaff(String name, String role, String department,
-                         String email, String phone, String joinDate,
-                         String address, String photoPath, int userId) {
+            String email, String phone, String joinDate,
+            String address, String photoPath, int userId) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(KEY_NAME, name);
