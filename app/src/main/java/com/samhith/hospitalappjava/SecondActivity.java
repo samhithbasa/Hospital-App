@@ -136,7 +136,18 @@ public class SecondActivity extends AppCompatActivity {
             Toast.makeText(this, "Syncing data from cloud...", Toast.LENGTH_SHORT).show();
             OneTimeWorkRequest restoreRequest = new OneTimeWorkRequest.Builder(RestoreWorker.class).build();
             WorkManager.getInstance(this).enqueue(restoreRequest);
-            Toast.makeText(this, "Sync initiated. Please wait...", Toast.LENGTH_LONG).show();
+
+            WorkManager.getInstance(this).getWorkInfoByIdLiveData(restoreRequest.getId())
+                    .observe(this, workInfo -> {
+                        if (workInfo != null && workInfo.getState().isFinished()) {
+                            if (workInfo.getState() == androidx.work.WorkInfo.State.SUCCEEDED) {
+                                Toast.makeText(this, "Data synced successfully!", Toast.LENGTH_LONG).show();
+                            } else {
+                                Toast.makeText(this, "Sync failed. Please check internet connection.",
+                                        Toast.LENGTH_LONG).show();
+                            }
+                        }
+                    });
         });
 
         logoutBtn.setOnClickListener(v -> {
