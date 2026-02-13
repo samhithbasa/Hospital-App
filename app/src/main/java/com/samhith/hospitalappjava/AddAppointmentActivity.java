@@ -8,6 +8,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Build;
 import android.util.Log;
+import android.net.Uri;
+import android.provider.Settings;
+import androidx.appcompat.app.AlertDialog;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -182,8 +185,19 @@ public class AddAppointmentActivity extends AppCompatActivity {
                                     .show();
                         } else {
                             Log.w("AddAppointment", "Cannot schedule exact alarms - permission denied");
-                            Toast.makeText(this, "Please enable exact alarm permission in Settings for reminders",
-                                    Toast.LENGTH_LONG).show();
+                            new AlertDialog.Builder(this)
+                                    .setTitle("Permission Required")
+                                    .setMessage(
+                                            "To receive timely appointment reminders, please allow 'Alarms & reminders' permission in Settings.")
+                                    .setPositiveButton("Go to Settings", (dialog, which) -> {
+                                        Intent settingsIntent = new Intent(
+                                                Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
+                                        settingsIntent.setData(Uri.parse("package:" + getPackageName()));
+                                        startActivity(settingsIntent);
+                                    })
+                                    .setNegativeButton("Cancel", null)
+                                    .show();
+                            Toast.makeText(this, "Reminder NOT set. Permission required.", Toast.LENGTH_LONG).show();
                         }
                     } else {
                         alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
