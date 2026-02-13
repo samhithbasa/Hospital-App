@@ -37,6 +37,19 @@ public class BackupWorker extends Worker {
                     .set(patientMap);
         }
 
+        // Sync users
+        List<Map<String, String>> users = dbHelper.getAllUsers();
+        for (Map<String, String> user : users) {
+            Map<String, Object> userMap = new HashMap<>();
+            userMap.put("username", user.get("username"));
+            userMap.put("password", user.get("password"));
+            userMap.put("role", user.get("role"));
+
+            // Use username as ID since it receives unique constraint
+            db.collection("backup_users").document(user.get("username"))
+                    .set(userMap);
+        }
+
         // Example: Sync appointments
         List<Appointment> appointments = dbHelper.getAllAppointments();
         for (Appointment a : appointments) {

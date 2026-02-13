@@ -12,6 +12,16 @@ import com.google.android.material.datepicker.MaterialDatePicker;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.text.ParseException;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Build;
+import android.util.Log;
+import android.net.Uri;
+import android.provider.Settings;
+import androidx.appcompat.app.AlertDialog;
 
 public class EditAppointmentActivity extends AppCompatActivity {
     private EditText etPatientId, etDoctorId, etDate, etTime, etPurpose, etStatus;
@@ -116,12 +126,79 @@ public class EditAppointmentActivity extends AppCompatActivity {
             boolean updated = databaseHelper.updateAppointment(appointment);
             if (updated) {
                 Toast.makeText(this, "Appointment updated", Toast.LENGTH_SHORT).show();
+
+                // Fetch patient name for the reminder
+                String patientName = "Patient";
+                Patient p = databaseHelper.getPatientById(patientId);
+                if (p != null)
+                    patientName = p.getName();
+
+                scheduleReminder(appointmentId, patientName, date, time);
+
                 finish();
             } else {
                 Toast.makeText(this, "Error updating appointment", Toast.LENGTH_SHORT).show();
             }
         } catch (NumberFormatException e) {
             Toast.makeText(this, "Please enter valid IDs", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void scheduleReminder(int appointmentId, String patientName, String date, String time) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
+        try {
+            Date appointmentDate = sdf.parse(date + " " + time);
+            if (appointmentDate != null) {
+                long triggerAtMillis = appointmentDate.getTime() - (10 * 60 * 1000); // 10 minutes before
+
+                if (triggerAtMillis < System.currentTimeMillis()) {
+                    triggerAtMillis = System.currentTimeMillis() + 1000; // If already passed, set for 1s later
+                }
+
+                Intent intent = new Intent(this, ReminderReceiver.class);
+                intent.putExtra("PATIENT_NAME", patientName);
+                intent.putExtra("APPOINTMENT_TIME", time);
+
+                PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                        this, appointmentId, intent,
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+                AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+                if (alarmManager != null) {
+                    // Check if we can schedule exact alarms on Android 12+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        if (alarmManager.canScheduleExactAlarms()) {
+                            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis,
+                                    pendingIntent);
+                            Log.d("EditAppointment", "Alarm scheduled for: " + appointmentDate);
+                            Toast.makeText(this, "Reminder updated", Toast.LENGTH_SHORT)
+                                    .show();
+                        } else {
+                            Log.w("EditAppointment", "Cannot schedule exact alarms - permission denied");
+                            new AlertDialog.Builder(this)
+                                    .setTitle("Permission Required")
+                                    .setMessage(
+                                            "To receive timely appointment reminders, please allow 'Alarms & reminders' permission in Settings.")
+                                    .setPositiveButton("Go to Settings", (dialog, which) -> {
+                                        Intent settingsIntent = new Intent(
+                                                Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
+                                        settingsIntent.setData(Uri.parse("package:" + getPackageName()));
+                                        startActivity(settingsIntent);
+                                    })
+                                    .setNegativeButton("Cancel", null)
+                                    .show();
+                            Toast.makeText(this, "Reminder NOT set. Permission required.", Toast.LENGTH_LONG).show();
+                        }
+                    } else {
+                        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
+                        Log.d("EditAppointment", "Alarm scheduled for: " + appointmentDate);
+                        Toast.makeText(this, "Reminder updated", Toast.LENGTH_SHORT)
+                                .show();
+                    }
+                }
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
         }
     }
 }

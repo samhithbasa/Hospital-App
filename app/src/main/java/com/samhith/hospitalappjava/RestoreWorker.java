@@ -28,6 +28,19 @@ public class RestoreWorker extends Worker {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         try {
+            // Restore users synchronously
+            Tasks.await(db.collection("backup_users").get().addOnSuccessListener(queryDocumentSnapshots -> {
+                for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                    Map<String, Object> data = document.getData();
+                    String username = (String) data.get("username");
+                    String password = (String) data.get("password"); // Hashed
+                    String role = (String) data.get("role");
+
+                    // Restore user safely
+                    dbHelper.restoreUser(username, password, role);
+                }
+            }));
+
             // Restore patients synchronously
             Tasks.await(db.collection("backup_patients").get().addOnSuccessListener(queryDocumentSnapshots -> {
                 for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
