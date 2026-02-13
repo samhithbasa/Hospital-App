@@ -12,6 +12,7 @@ import android.content.SharedPreferences;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.work.PeriodicWorkRequest;
+import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import java.util.concurrent.TimeUnit;
@@ -30,7 +31,8 @@ public class SecondActivity extends AppCompatActivity {
         Button managePatientsBtn = findViewById(R.id.managePatientsBtn);
         Button manageStaffBtn = findViewById(R.id.manageStaffBtn);
         Button manageAppointmentsBtn = findViewById(R.id.manageAppointmentsBtn);
-        Button viewReportsBtn = findViewById(R.id.viewReportsBtn);
+        Button reportsBtn = findViewById(R.id.reportsBtn);
+        Button syncDataBtn = findViewById(R.id.syncDataBtn);
         Button logoutBtn = findViewById(R.id.logoutBtn);
         Button backBtn = findViewById(R.id.backBtn);
         SwitchMaterial darkModeSwitch = findViewById(R.id.darkModeSwitch);
@@ -113,7 +115,7 @@ public class SecondActivity extends AppCompatActivity {
             }
         });
 
-        viewReportsBtn.setOnClickListener(v -> {
+        reportsBtn.setOnClickListener(v -> {
             try {
                 Intent intent = new Intent(SecondActivity.this, ReportsActivity.class);
                 intent.putExtra("USER_ID", userId);
@@ -128,6 +130,13 @@ public class SecondActivity extends AppCompatActivity {
         backBtn.setOnClickListener(v -> {
             startActivity(new Intent(SecondActivity.this, MainActivity.class));
             finish();
+        });
+
+        syncDataBtn.setOnClickListener(v -> {
+            Toast.makeText(this, "Syncing data from cloud...", Toast.LENGTH_SHORT).show();
+            OneTimeWorkRequest restoreRequest = new OneTimeWorkRequest.Builder(RestoreWorker.class).build();
+            WorkManager.getInstance(this).enqueue(restoreRequest);
+            Toast.makeText(this, "Sync initiated. Please wait...", Toast.LENGTH_LONG).show();
         });
 
         logoutBtn.setOnClickListener(v -> {
