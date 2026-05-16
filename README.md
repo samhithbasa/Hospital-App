@@ -12,9 +12,10 @@ You can download the latest APK from the releases folder:
 
 ### User Management
 - **Multi-role Authentication**: Admin and Staff roles with secure login using **BCrypt hashing**
-- **User Registration**: New staff can sign up with password validation and secure storage
-- **Forgot Password**: Implementation of reset password flow via Firebase Email
+- **User Registration with OTP**: New staff can sign up with secure **OTP-based Email Verification** to ensure valid communication channels
+- **Forgot Password**: Implementation of reset password flow
 - **Role-based Access Control**: Different permissions for admin and staff users
+- **Enhanced Security**: Server-side account verification during login to block deactivated or removed users
 
 ### Patient Management
 - Add, view, edit, and delete patient records
@@ -33,16 +34,21 @@ You can download the latest APK from the releases folder:
 - Edit and manage appointment details
 - Status update tracking with timestamps
 - **Appointment Reminders**: Local notifications 10 minutes before scheduled time
+- **Doctor Notifications**: Dedicated background service for alerting doctors about new or updated appointments
 - **Push Notifications**: Integrated Firebase Cloud Messaging for system alerts
 
-### Reports & Analytics
+### UI & Reports
 - Generate reports on appointments by status
 - View patient and staff statistics
 - Filter appointments by status (scheduled, completed, canceled)
 - **PDF Export**: Export comprehensive hospital reports to the device **Downloads folder** (`/storage/emulated/0/Download/`)
+- **Modern UI**: Material 3 design with personalized dashboard greetings and modern card-based action dialogs
 - **Dark Mode**: Toggleable dark theme with state persistence
-- **Cloud Backup**: Periodic background synchronization of SQLite data to Firebase Firestore
-- **Cloud Restore**: Pull data from Firestore to sync across multiple devices
+
+### Cloud & Synchronization
+- **Real-time Cloud Sync**: Event-driven real-time synchronization of SQLite data to Firebase Firestore (replacing periodic background workers)
+- **Offline Support**: Robust offline data management and synchronization resolution
+- **Cloud Restore**: Pull data from Firestore to seamlessly sync across multiple devices
 
 ## 🛠️ Tech Stack
 
