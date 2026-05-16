@@ -5,8 +5,8 @@ A comprehensive Android application for managing hospital operations including p
 
 ## 📥 Download
 
-You can download the latest APK from the releases folder: 
-**[Download HospitalApp.apk](releases/HospitalApp.apk)**
+You can download the latest APK directly from here: 
+**[Download HospitalApp.apk](https://raw.githubusercontent.com/samhithbasa/Hospital-App/main/releases/HospitalApp.apk)**
 
 ## 📱 Features
 
