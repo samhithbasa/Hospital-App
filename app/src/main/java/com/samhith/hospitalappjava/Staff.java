@@ -10,8 +10,15 @@ public class Staff {
     private String joinDate;
     private String address;
     private String photoPath;
+    private String specialization;
+    private int userId;
 
     // Getters and setters
+    public int getUserId() { return userId; }
+    public void setUserId(int userId) { this.userId = userId; }
+    public String getSpecialization() { return specialization; }
+    public void setSpecialization(String specialization) { this.specialization = specialization; }
+
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
 

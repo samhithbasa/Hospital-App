@@ -10,6 +10,9 @@ import android.widget.Button;
 import android.widget.SearchView;
 import android.widget.Toast;
 
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.DocumentChange;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,6 +25,7 @@ public class ManageAppointmentsActivity extends AppCompatActivity {
     private List<Appointment> originalAppointments;
     private int userId;
     private String userRole;
+    private ListenerRegistration cloudListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,11 +62,16 @@ public class ManageAppointmentsActivity extends AppCompatActivity {
             }
         });
 
-        btnAddAppointment.setOnClickListener(v -> {
-            Intent intent = new Intent(this, AddAppointmentActivity.class);
-            intent.putExtra("USER_ID", userId);
-            startActivity(intent);
-        });
+        if ("doctor".equalsIgnoreCase(userRole)) {
+            btnAddAppointment.setVisibility(View.GONE);
+        } else {
+            btnAddAppointment.setOnClickListener(v -> {
+                Intent intent = new Intent(this, AddAppointmentActivity.class);
+                intent.putExtra("USER_ID", userId);
+                intent.putExtra("USER_ROLE", userRole);
+                startActivity(intent);
+            });
+        }
 
         Button backBtn = findViewById(R.id.backBtn);
         backBtn.setOnClickListener(v -> finish());
@@ -70,17 +79,71 @@ public class ManageAppointmentsActivity extends AppCompatActivity {
         loadAppointments();
     }
 
-    private void loadAppointments() {
-        if (userRole.equals("admin")) {
-            originalAppointments = databaseHelper.getAllAppointmentsWithNames();
-        } else if (userRole.equals("doctor")) {
-            originalAppointments = databaseHelper.getAppointmentsByDoctorId(userId);
+    private void setupRealTimeSync() {
+        String email = getIntent().getStringExtra("USERNAME");
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        
+        com.google.firebase.firestore.Query query;
+        if ("doctor".equalsIgnoreCase(userRole)) {
+            query = db.collection("backup_appointments").whereEqualTo("doctor_email", email.toLowerCase().trim());
         } else {
-            originalAppointments = databaseHelper.getAppointmentsByUserId(userId);
+            query = db.collection("backup_appointments");
         }
 
-        adapter = new AppointmentAdapter(originalAppointments, this, this::onAppointmentClick);
-        recyclerView.setAdapter(adapter);
+        cloudListener = query.addSnapshotListener((snapshots, e) -> {
+            if (e != null) return;
+            if (snapshots != null) {
+                boolean needsRefresh = false;
+                for (DocumentChange dc : snapshots.getDocumentChanges()) {
+                    if (dc.getType() == DocumentChange.Type.REMOVED) {
+                        // Handle deletion from cloud
+                        String pPhone = dc.getDocument().getString("patient_phone");
+                        String dEmail = dc.getDocument().getString("doctor_email");
+                        String date = dc.getDocument().getString("date");
+                        String time = dc.getDocument().getString("time");
+                        if (pPhone != null && dEmail != null && date != null && time != null) {
+                            int id = databaseHelper.getAppointmentIdByNaturalKey(pPhone, dEmail, date, time);
+                            if (id != -1) {
+                                databaseHelper.deleteAppointment(id);
+                                needsRefresh = true;
+                            }
+                        }
+                    } else {
+                        // Handle added or modified
+                        needsRefresh = true; // For simplicity, trigger a reload for any cloud change
+                    }
+                }
+                if (needsRefresh) loadAppointmentsFromLocal();
+            }
+        });
+    }
+
+    private void loadAppointments() {
+        if ("doctor".equalsIgnoreCase(userRole)) {
+            String email = getIntent().getStringExtra("USERNAME");
+            FirestoreSyncManager.syncPendingAppointmentsForDoctor(this, email, userId, this::loadAppointmentsFromLocal);
+        } else {
+            loadAppointmentsFromLocal();
+        }
+        setupRealTimeSync();
+    }
+
+    private void loadAppointmentsFromLocal() {
+        runOnUiThread(() -> {
+            if ("doctor".equalsIgnoreCase(userRole)) {
+                String email = getIntent().getStringExtra("USERNAME");
+                originalAppointments = databaseHelper.getAppointmentsByDoctorEmail(email);
+                originalAppointments.sort((a1, a2) -> {
+                    if ("pending".equalsIgnoreCase(a1.getStatus()) && !"pending".equalsIgnoreCase(a2.getStatus())) return -1;
+                    if (!"pending".equalsIgnoreCase(a1.getStatus()) && "pending".equalsIgnoreCase(a2.getStatus())) return 1;
+                    return 0;
+                });
+            } else {
+                originalAppointments = databaseHelper.getAllAppointmentsWithNames();
+            }
+            adapter = new AppointmentAdapter(originalAppointments, this, this::onAppointmentClick);
+            recyclerView.setAdapter(adapter);
+        });
     }
 
     private void filterAppointments(String query) {
@@ -102,6 +165,8 @@ public class ManageAppointmentsActivity extends AppCompatActivity {
         Intent intent = new Intent(this, AppointmentDetailsActivity.class);
         intent.putExtra("APPOINTMENT_ID", appointment.getId());
         intent.putExtra("USER_ID", userId);
+        intent.putExtra("USER_ROLE", userRole);
+        intent.putExtra("USERNAME", getIntent().getStringExtra("USERNAME")); // Pass email!
         startActivity(intent);
     }
 
@@ -109,5 +174,13 @@ public class ManageAppointmentsActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         loadAppointments();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (cloudListener != null) {
+            cloudListener.remove();
+        }
     }
 }

@@ -6,6 +6,7 @@
     <color name="green">#81C784</color>
     <color name="red">#E57373</color>
     <color name="orange">#FFB74D</color>
+    <color name="pending">#FFD54F</color>
     <color name="gray">#BDBDBD</color>
     <color name="light_gray">#333333</color>
     <color name="colorPrimary">#BB86FC</color>
@@ -14,4 +15,13 @@
     <color name="light_gray_background">#1E1E1E</color>
     <color name="divider_color">#424242</color>
     <color name="text_secondary">#B0B0B0</color>
+
+    <!-- Semantic Colors for Dark Mode -->
+    <color name="background">#121212</color>
+    <color name="surface">#1E1E1E</color>
+    <color name="on_surface">#E1E1E1</color>
+    <color name="surface_variant">#2C2C2C</color>
+    <color name="on_surface_variant">#B0B0B0</color>
+    <color name="primary">#BB86FC</color>
+    <color name="secondary">#03DAC6</color>
 </resources>

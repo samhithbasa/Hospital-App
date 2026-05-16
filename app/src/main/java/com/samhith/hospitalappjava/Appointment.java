@@ -11,6 +11,7 @@ public class Appointment {
     private String purpose;
     private String status;
     private String statusUpdateTime; // New field
+    private int userId; // For scoping
 
     // Getters and setters
     public int getId() { return id; }
@@ -33,4 +34,6 @@ public class Appointment {
     public void setStatus(String status) { this.status = status; }
     public String getStatusUpdateTime() { return statusUpdateTime; }
     public void setStatusUpdateTime(String statusUpdateTime) { this.statusUpdateTime = statusUpdateTime; }
+    public int getUserId() { return userId; }
+    public void setUserId(int userId) { this.userId = userId; }
 }

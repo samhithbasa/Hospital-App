@@ -29,6 +29,7 @@ public class EditAppointmentActivity extends AppCompatActivity {
     private DatabaseHelper databaseHelper;
     private int appointmentId;
     private String originalStatus;
+    private String userRole;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,15 +47,44 @@ public class EditAppointmentActivity extends AppCompatActivity {
         etStatus = findViewById(R.id.etStatus);
         btnUpdate = findViewById(R.id.btnUpdate);
 
+        userRole = getIntent().getStringExtra("USER_ROLE");
+        if (userRole == null) userRole = "receptionist"; // fallback
+
+        setupRoleBasedFields();
+
         etDate.setFocusable(false);
-        etDate.setOnClickListener(v -> showDatePicker());
+        etDate.setOnClickListener(v -> {
+            if (etDate.isEnabled()) showDatePicker();
+        });
 
         etTime.setFocusable(false);
-        etTime.setOnClickListener(v -> showTimePicker());
+        etTime.setOnClickListener(v -> {
+            if (etTime.isEnabled()) showTimePicker();
+        });
 
         loadAppointmentData();
 
         btnUpdate.setOnClickListener(v -> updateAppointment());
+    }
+
+    private void setupRoleBasedFields() {
+        if ("doctor".equalsIgnoreCase(userRole)) {
+            // Doctors can ONLY update status
+            etPatientId.setEnabled(false);
+            etDoctorId.setEnabled(false);
+            etDate.setEnabled(false);
+            etTime.setEnabled(false);
+            etPurpose.setEnabled(false);
+            etStatus.setEnabled(true);
+        } else if ("receptionist".equalsIgnoreCase(userRole)) {
+            // Receptionists can update metadata but NOT status
+            etPatientId.setEnabled(true);
+            etDoctorId.setEnabled(true);
+            etDate.setEnabled(true);
+            etTime.setEnabled(true);
+            etPurpose.setEnabled(true);
+            etStatus.setEnabled(false);
+        }
     }
 
     private void showDatePicker() {
@@ -125,15 +155,24 @@ public class EditAppointmentActivity extends AppCompatActivity {
 
             boolean updated = databaseHelper.updateAppointment(appointment);
             if (updated) {
+                // Auto-sync to Firestore
+                Patient p = databaseHelper.getPatientById(patientId);
+                Staff d = databaseHelper.getStaffById(doctorId);
+                if (p != null && d != null) {
+                    FirestoreSyncManager.syncAppointment(appointment, p.getPhone(), d.getEmail());
+                }
+                
                 Toast.makeText(this, "Appointment updated", Toast.LENGTH_SHORT).show();
 
-                // Fetch patient name for the reminder
+                // Fetch patient name and phone for the reminder
                 String patientName = "Patient";
-                Patient p = databaseHelper.getPatientById(patientId);
-                if (p != null)
+                String patientPhone = "";
+                if (p != null) {
                     patientName = p.getName();
+                    patientPhone = p.getPhone();
+                }
 
-                scheduleReminder(appointmentId, patientName, date, time);
+                scheduleReminder(appointmentId, patientName, patientPhone, date, time);
 
                 finish();
             } else {
@@ -144,12 +183,12 @@ public class EditAppointmentActivity extends AppCompatActivity {
         }
     }
 
-    private void scheduleReminder(int appointmentId, String patientName, String date, String time) {
+    private void scheduleReminder(int appointmentId, String patientName, String patientPhone, String date, String time) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
         try {
             Date appointmentDate = sdf.parse(date + " " + time);
             if (appointmentDate != null) {
-                long triggerAtMillis = appointmentDate.getTime() - (10 * 60 * 1000); // 10 minutes before
+                long triggerAtMillis = appointmentDate.getTime() - (15 * 60 * 1000); // 15 minutes before
 
                 if (triggerAtMillis < System.currentTimeMillis()) {
                     triggerAtMillis = System.currentTimeMillis() + 1000; // If already passed, set for 1s later
@@ -157,6 +196,7 @@ public class EditAppointmentActivity extends AppCompatActivity {
 
                 Intent intent = new Intent(this, ReminderReceiver.class);
                 intent.putExtra("PATIENT_NAME", patientName);
+                intent.putExtra("PATIENT_PHONE", patientPhone);
                 intent.putExtra("APPOINTMENT_TIME", time);
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(

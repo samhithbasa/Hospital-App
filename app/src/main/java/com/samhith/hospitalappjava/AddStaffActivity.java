@@ -23,7 +23,7 @@ public class AddStaffActivity extends AppCompatActivity {
     private static final int PICK_IMAGE_REQUEST = 1001;
 
     private EditText nameEditText, roleEditText, departmentEditText,
-            emailEditText, phoneEditText, joinDateEditText, addressEditText;
+            emailEditText, phoneEditText, joinDateEditText, addressEditText, specializationEditText;
     private ImageView profileImageView;
     private Uri selectedImageUri;
     private Button saveButton;
@@ -45,6 +45,7 @@ public class AddStaffActivity extends AppCompatActivity {
         phoneEditText = findViewById(R.id.phoneEditText);
         joinDateEditText = findViewById(R.id.joinDateEditText);
         addressEditText = findViewById(R.id.addressEditText);
+        specializationEditText = findViewById(R.id.specializationEditText);
         profileImageView = findViewById(R.id.profileImageView);
         saveButton = findViewById(R.id.saveButton);
 
@@ -97,10 +98,12 @@ public class AddStaffActivity extends AppCompatActivity {
         String name = nameEditText.getText().toString().trim();
         String role = roleEditText.getText().toString().trim();
         String department = departmentEditText.getText().toString().trim();
-        String email = emailEditText.getText().toString().trim();
+        String emailInput = emailEditText.getText().toString().trim();
+        String email = emailInput.toLowerCase();
         String phone = phoneEditText.getText().toString().trim();
         String joinDate = joinDateEditText.getText().toString().trim();
         String address = addressEditText.getText().toString().trim();
+        String specialization = specializationEditText.getText().toString().trim();
         String photoPath = selectedImageUri != null ? selectedImageUri.toString() : null;
 
         if (name.isEmpty() || role.isEmpty() || department.isEmpty() ||
@@ -109,14 +112,35 @@ public class AddStaffActivity extends AppCompatActivity {
             return;
         }
 
+        if (role.equalsIgnoreCase("doctor") && specialization.isEmpty()) {
+            Toast.makeText(this, "Specialization is required for doctors", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         if (!Pattern.matches("^[0-9]{10}$", phone)) {
             Toast.makeText(this, "Please enter a valid 10-digit phone number", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        long result = dbHelper.addStaff(name, role, department, email, phone, joinDate, address, photoPath, userId);
+        long result = dbHelper.addStaff(name, role, department, email, phone, joinDate, address, specialization, photoPath, userId);
 
         if (result != -1) {
+            // Create Staff object for syncing
+            Staff staff = new Staff();
+            staff.setId((int) result);
+            staff.setName(name);
+            staff.setRole(role);
+            staff.setDepartment(department);
+            staff.setEmail(email);
+            staff.setPhone(phone);
+            staff.setJoinDate(joinDate);
+            staff.setAddress(address);
+            staff.setSpecialization(specialization);
+            staff.setPhotoPath(photoPath);
+            
+            // Sync to Firestore
+            FirestoreSyncManager.syncStaff(staff);
+
             Toast.makeText(this, "Staff member added successfully", Toast.LENGTH_SHORT).show();
             finish();
         } else {

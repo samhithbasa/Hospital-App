@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Build;
+import android.telephony.SmsManager;
 import android.util.Log;
 import android.net.Uri;
 import android.provider.Settings;
@@ -100,7 +101,7 @@ public class AddAppointmentActivity extends AppCompatActivity {
     }
 
     private void loadPatientsAndDoctors() {
-        patientList = databaseHelper.getPatientsByUserId(userId);
+        patientList = databaseHelper.getAllPatients();
         List<String> patientNames = new ArrayList<>();
         for (Patient p : patientList) {
             patientNames.add(p.getName() + " (ID: " + p.getId() + ")");
@@ -146,21 +147,48 @@ public class AddAppointmentActivity extends AppCompatActivity {
         long result = databaseHelper.addAppointment(patientId, doctorId, date, time, purpose, userId);
 
         if (result != -1) {
-            scheduleReminder((int) result, patientList.get(spinnerPatients.getSelectedItemPosition()).getName(), date,
-                    time);
-            Toast.makeText(this, "Appointment added successfully", Toast.LENGTH_SHORT).show();
+            // Create Appointment object for syncing
+            Appointment appointment = new Appointment();
+            appointment.setId((int) result);
+            appointment.setPatientId(patientId);
+            appointment.setDoctorId(doctorId);
+            appointment.setDate(date);
+            appointment.setTime(time);
+            appointment.setPurpose(purpose);
+            appointment.setStatus("pending");
+            appointment.setStatusUpdateTime(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(new java.util.Date()));
+            appointment.setUserId(userId);
+            
+            // Sync to Firestore
+            Patient selectedPatient = patientList.get(spinnerPatients.getSelectedItemPosition());
+            Staff selectedDoctor = doctorList.get(spinnerDoctors.getSelectedItemPosition());
+            FirestoreSyncManager.syncAppointment(appointment, selectedPatient.getPhone(), selectedDoctor.getEmail());
+
+            // Send SMS to Doctor
+            if (selectedDoctor.getPhone() != null && !selectedDoctor.getPhone().isEmpty()) {
+                try {
+                    SmsManager smsManager = SmsManager.getDefault();
+                    String message = "New Appointment Request: Patient " + selectedPatient.getName() + " on " + date + " at " + time + ". Please check your app to Accept or Cancel.";
+                    smsManager.sendTextMessage(selectedDoctor.getPhone(), null, message, null, null);
+                    Log.d("AddAppointment", "SMS sent to doctor: " + selectedDoctor.getPhone());
+                } catch (Exception e) {
+                    Log.e("AddAppointment", "Failed to send SMS to doctor", e);
+                }
+            }
+
+            Toast.makeText(this, "Appointment request sent to doctor", Toast.LENGTH_SHORT).show();
             finish();
         } else {
             Toast.makeText(this, "Error adding appointment", Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void scheduleReminder(int appointmentId, String patientName, String date, String time) {
+    private void scheduleReminder(int appointmentId, String patientName, String patientPhone, String date, String time) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
         try {
             Date appointmentDate = sdf.parse(date + " " + time);
             if (appointmentDate != null) {
-                long triggerAtMillis = appointmentDate.getTime() - (10 * 60 * 1000); // 10 minutes before
+                long triggerAtMillis = appointmentDate.getTime() - (15 * 60 * 1000); // 15 minutes before
 
                 if (triggerAtMillis < System.currentTimeMillis()) {
                     triggerAtMillis = System.currentTimeMillis() + 1000; // If already passed, set for 1s later
@@ -168,6 +196,7 @@ public class AddAppointmentActivity extends AppCompatActivity {
 
                 Intent intent = new Intent(this, ReminderReceiver.class);
                 intent.putExtra("PATIENT_NAME", patientName);
+                intent.putExtra("PATIENT_PHONE", patientPhone);
                 intent.putExtra("APPOINTMENT_TIME", time);
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(
@@ -182,7 +211,7 @@ public class AddAppointmentActivity extends AppCompatActivity {
                             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis,
                                     pendingIntent);
                             Log.d("AddAppointment", "Alarm scheduled for: " + appointmentDate);
-                            Toast.makeText(this, "Reminder set for 10 minutes before appointment", Toast.LENGTH_SHORT)
+                            Toast.makeText(this, "Reminder set for 15 minutes before appointment", Toast.LENGTH_SHORT)
                                     .show();
                         } else {
                             Log.w("AddAppointment", "Cannot schedule exact alarms - permission denied");
@@ -203,7 +232,7 @@ public class AddAppointmentActivity extends AppCompatActivity {
                     } else {
                         alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
                         Log.d("AddAppointment", "Alarm scheduled for: " + appointmentDate);
-                        Toast.makeText(this, "Reminder set for 10 minutes before appointment", Toast.LENGTH_SHORT)
+                        Toast.makeText(this, "Reminder set for 15 minutes before appointment", Toast.LENGTH_SHORT)
                                 .show();
                     }
                 }

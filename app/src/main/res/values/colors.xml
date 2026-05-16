@@ -1,17 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_500">#673AB7</color>
+    <!-- Primary Branding Colors -->
+    <color name="primary">#007BFF</color>
+    <color name="primary_variant">#0056b3</color>
+    <color name="on_primary">#FFFFFF</color>
+    
+    <!-- Secondary/Accent Colors -->
+    <color name="secondary">#6C757D</color>
+    <color name="accent">#17A2B8</color>
+    
+    <!-- Semantic Colors -->
+    <color name="success">#28A745</color>
+    <color name="error">#DC3545</color>
+    <color name="warning">#FFC107</color>
+    <color name="info">#17A2B8</color>
+    <color name="orange">#FD7E14</color>
+    <color name="pending">#FFC107</color>
+    <color name="text_secondary">#6C757D</color>
+    <color name="divider_color">#DEE2E6</color>
+    <color name="colorPrimary">#007BFF</color>
+    <color name="primaryColor">#007BFF</color>
+    <color name="purple_500">#6200EE</color>
+
+    <!-- Background and Surface -->
+    <color name="background">#F8F9FA</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="on_surface">#212529</color>
+    <color name="surface_variant">#E9ECEF</color>
+    <color name="on_surface_variant">#495057</color>
+    
+    <!-- Legacy/Existing References (Mappings) -->
+    <color name="primary_color">#007BFF</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
-    <color name="green">#4CAF50</color>
-    <color name="red">#F44336</color>
-    <color name="orange">#FF9800</color>
-    <color name="gray">#757575</color>
-    <color name="light_gray">#E0E0E0</color>
-    <color name="colorPrimary">#6200EE</color>
-    <color name="primaryColor">#6200EE</color>
-    <color name="primary_color">#6200EE</color>
-    <color name="light_gray_background">#F5F5F5</color>
-    <color name="divider_color">#E0E0E0</color>
-    <color name="text_secondary">#757575</color>
+    <color name="red">#DC3545</color>
+    <color name="green">#28A745</color>
+    <color name="gray">#6C757D</color>
+    <color name="light_gray">#DEE2E6</color>
+    <color name="light_gray_background">#F8F9FA</color>
 </resources>

@@ -1,132 +1,222 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp"
-    android:background="@color/white"
+    android:background="@color/background"
+    android:fillViewport="true"
     tools:context=".SecondActivity">
 
-    <!-- Welcome Message -->
-    <com.google.android.material.switchmaterial.SwitchMaterial
-        android:id="@+id/darkModeSwitch"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="end"
-        android:text="Dark Mode"
-        android:layout_marginBottom="8dp"/>
-
-    <!-- Main Buttons Container -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="@drawable/card_background"
-        android:padding="16dp"
-        android:elevation="2dp"
-        android:layout_marginBottom="16dp">
+        android:padding="20dp">
 
-        <TextView
-            android:id="@+id/welcomeText"
+        <!-- Header Section -->
+        <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            android:text="Admin Dashboard"
-            android:textColor="@color/primary_color"
-            android:textAlignment="center"
-            android:textSize="24sp"
-            android:textStyle="bold" />
+            android:layout_marginBottom="32dp">
 
-        <LinearLayout
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_alignParentStart="true">
+
+                <TextView
+                    android:id="@+id/welcomeText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Welcome back,"
+                    android:textColor="@color/secondary"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/userRoleText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Dashboard"
+                    android:textColor="@color/on_surface"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/darkModeSwitch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:text="Dark" />
+        </RelativeLayout>
+
+        <!-- Grid Container -->
+        <GridLayout
+            android:id="@+id/dashboardGrid"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center">
+            android:columnCount="2"
+            android:alignmentMode="alignMargins"
+            android:columnOrderPreserved="false">
 
-            <!-- Manage Patients Button -->
-            <Button
-                android:id="@+id/managePatientsBtn"
-                android:layout_width="match_parent"
+            <!-- Card: Manage Patients (Receptionist Only) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardPatients"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="Manage Patients"
-                android:textSize="18sp"
-                android:backgroundTint="@color/primary_color"
-                android:textColor="@android:color/white"
-                android:layout_marginBottom="16dp"
-                android:padding="16dp"/>
+                android:layout_columnWeight="1"
+                android:layout_margin="8dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp"
+                android:visibility="visible">
 
-            <!-- Manage Staff Button -->
-            <Button
-                android:id="@+id/manageStaffBtn"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Manage Staff"
-                android:textSize="18sp"
-                android:backgroundTint="@color/primary_color"
-                android:textColor="@android:color/white"
-                android:layout_marginBottom="16dp"
-                android:padding="16dp"/>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="24dp">
 
-            <!-- Manage Appointments Button -->
-            <Button
-                android:id="@+id/manageAppointmentsBtn"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Manage Appointments"
-                android:textSize="18sp"
-                android:backgroundTint="@color/primary_color"
-                android:textColor="@android:color/white"
-                android:layout_marginBottom="16dp"
-                android:padding="16dp"/>
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@android:drawable/ic_menu_myplaces"
+                        app:tint="@color/primary" />
 
-            <!-- View Reports Button -->
-            <Button
-                android:id="@+id/reportsBtn"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Reports"
-                android:textSize="18sp"
-                android:backgroundTint="@color/primary_color"
-                android:textColor="@android:color/white"
-                android:layout_marginBottom="16dp"
-                android:padding="16dp"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="Patients"
+                        android:textColor="@color/on_surface"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-            <Button
-                android:id="@+id/syncDataBtn"
-                android:layout_width="match_parent"
+            <!-- Card: Manage Staff (Receptionist Only) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardStaff"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="Sync Data from Cloud"
-                android:textSize="18sp"
-                android:backgroundTint="@color/primary_color"
-                android:textColor="@android:color/white"
-                android:layout_marginBottom="16dp"
-                android:padding="16dp"/>
-        </LinearLayout>
+                android:layout_columnWeight="1"
+                android:layout_margin="8dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp"
+                android:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="24dp">
+
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@android:drawable/ic_menu_set_as"
+                        app:tint="@color/primary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="Staff"
+                        android:textColor="@color/on_surface"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Card: Manage Appointments (Both) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardAppointments"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:layout_margin="8dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="24dp">
+
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@android:drawable/ic_menu_agenda"
+                        app:tint="@color/primary" />
+
+                    <TextView
+                        android:id="@+id/tvAppointmentsTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="Appointments"
+                        android:textColor="@color/on_surface"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Card: Reports (Receptionist Only) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardReports"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:layout_margin="8dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp"
+                android:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="24dp">
+
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@android:drawable/ic_menu_report_image"
+                        app:tint="@color/primary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="Reports"
+                        android:textColor="@color/on_surface"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+        </GridLayout>
+
+        <!-- Spacer -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="32dp" />
+
+        <!-- Logout Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/logoutBtn"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="Logout"
+            android:textColor="@color/error"
+            app:cornerRadius="12dp"
+            app:icon="@android:drawable/ic_lock_power_off"
+            app:iconTint="@color/error" />
 
     </LinearLayout>
-
-    <Button
-        android:id="@+id/backBtn"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Back"
-        android:layout_marginTop="16dp"
-        android:backgroundTint="@android:color/darker_gray"
-        android:textColor="@android:color/white"
-        android:textAllCaps="false"
-        android:elevation="2dp"/>
-
-    <!-- Logout Button at bottom -->
-    <Button
-        android:id="@+id/logoutBtn"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Logout"
-        android:textSize="18sp"
-        android:backgroundTint="@color/red"
-        android:textColor="@color/white"
-        android:layout_marginTop="16dp"
-        android:padding="16dp"/>
-
-</LinearLayout>
+</ScrollView>

@@ -75,6 +75,19 @@ public class AddPatientActivity extends AppCompatActivity {
                     long result = dbHelper.addPatient(name, age, gender, address, phone, medicalHistory, userId);
 
                     if (result != -1) {
+                        // Create Patient object for syncing
+                        Patient patient = new Patient();
+                        patient.setId((int) result);
+                        patient.setName(name);
+                        patient.setAge(age);
+                        patient.setGender(gender);
+                        patient.setAddress(address);
+                        patient.setPhone(phone);
+                        patient.setMedicalHistory(medicalHistory);
+                        
+                        // Sync to Firestore
+                        FirestoreSyncManager.syncPatient(patient);
+
                         Toast.makeText(AddPatientActivity.this,
                                 "Patient added successfully", Toast.LENGTH_SHORT).show();
                         finish();

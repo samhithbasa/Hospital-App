@@ -14,7 +14,22 @@ public class ReminderReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         String patientName = intent.getStringExtra("PATIENT_NAME");
+        String patientPhone = intent.getStringExtra("PATIENT_PHONE");
         String appointmentTime = intent.getStringExtra("APPOINTMENT_TIME");
+        String message = "Reminder: You have an appointment at " + appointmentTime;
+
+        // Send SMS if permission is granted and phone number is available
+        if (patientPhone != null && !patientPhone.isEmpty()) {
+            if (androidx.core.content.ContextCompat.checkSelfPermission(context, 
+                    android.Manifest.permission.SEND_SMS) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                try {
+                    android.telephony.SmsManager smsManager = android.telephony.SmsManager.getDefault();
+                    smsManager.sendTextMessage(patientPhone, null, message, null, null);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
 
         NotificationManager notificationManager = (NotificationManager) context
                 .getSystemService(Context.NOTIFICATION_SERVICE);

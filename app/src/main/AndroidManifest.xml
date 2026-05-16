@@ -7,6 +7,9 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <application
         android:allowBackup="true"
@@ -47,6 +50,17 @@
         <activity android:name=".AppointmentDetailsActivity" />
         <activity android:name=".EditAppointmentActivity" />
         <activity android:name=".ReportsActivity" />
+        <activity android:name=".RegisterActivity" 
+            android:label="Staff Registration"
+            android:parentActivityName=".MainActivity"/>
+        <activity android:name=".OtpActivity" 
+            android:label="Verify Email"/>
+
+        <service
+            android:name=".DoctorNotificationService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
 
         <service
             android:name=".MyFirebaseMessagingService"
@@ -57,6 +71,12 @@
         </service>
 
         <receiver android:name=".ReminderReceiver" android:exported="true" />
+        <receiver android:name=".AppointmentActionReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="com.samhith.hospitalappjava.ACTION_ACCEPT" />
+                <action android:name="com.samhith.hospitalappjava.ACTION_CANCEL" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

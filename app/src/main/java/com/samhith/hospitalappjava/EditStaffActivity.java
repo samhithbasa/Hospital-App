@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 public class EditStaffActivity extends AppCompatActivity {
 
     private EditText nameEditText, roleEditText, departmentEditText,
-            emailEditText, phoneEditText, joinDateEditText, addressEditText;
+            emailEditText, phoneEditText, joinDateEditText, addressEditText, specializationEditText;
     private Button updateBtn, backBtn;
     private DatabaseHelper dbHelper;
     private int staffId;
@@ -34,6 +34,7 @@ public class EditStaffActivity extends AppCompatActivity {
         phoneEditText = findViewById(R.id.phoneEditText);
         joinDateEditText = findViewById(R.id.joinDateEditText);
         addressEditText = findViewById(R.id.addressEditText);
+        specializationEditText = findViewById(R.id.specializationEditText);
         updateBtn = findViewById(R.id.updateBtn);
         backBtn = findViewById(R.id.backBtn);
 
@@ -80,6 +81,7 @@ public class EditStaffActivity extends AppCompatActivity {
             phoneEditText.setText(staff.getPhone());
             joinDateEditText.setText(staff.getJoinDate());
             addressEditText.setText(staff.getAddress());
+            specializationEditText.setText(staff.getSpecialization());
         } else {
             Toast.makeText(this, "Staff record not found", Toast.LENGTH_SHORT).show();
             finish();
@@ -90,14 +92,21 @@ public class EditStaffActivity extends AppCompatActivity {
         String name = nameEditText.getText().toString().trim();
         String role = roleEditText.getText().toString().trim();
         String department = departmentEditText.getText().toString().trim();
-        String email = emailEditText.getText().toString().trim();
+        String emailInput = emailEditText.getText().toString().trim();
+        String email = emailInput.toLowerCase();
         String phone = phoneEditText.getText().toString().trim();
         String joinDate = joinDateEditText.getText().toString().trim();
         String address = addressEditText.getText().toString().trim();
+        String specialization = specializationEditText.getText().toString().trim();
 
         if (name.isEmpty() || role.isEmpty() || department.isEmpty() ||
                 email.isEmpty() || phone.isEmpty() || joinDate.isEmpty() || address.isEmpty()) {
             Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (role.equalsIgnoreCase("doctor") && specialization.isEmpty()) {
+            Toast.makeText(this, "Specialization is required for doctors", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -115,6 +124,7 @@ public class EditStaffActivity extends AppCompatActivity {
         staff.setPhone(phone);
         staff.setJoinDate(joinDate);
         staff.setAddress(address);
+        staff.setSpecialization(specialization);
 
         Staff dbStaff = dbHelper.getStaffById(staffId);
         if (dbStaff != null) {
@@ -124,6 +134,9 @@ public class EditStaffActivity extends AppCompatActivity {
         boolean success = dbHelper.updateStaff(staff);
 
         if (success) {
+            // Sync to Firestore
+            FirestoreSyncManager.syncStaff(staff);
+            
             Toast.makeText(this, "Staff updated successfully", Toast.LENGTH_SHORT).show();
             finish();
         } else {

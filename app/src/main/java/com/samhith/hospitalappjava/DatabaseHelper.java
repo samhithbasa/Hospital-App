@@ -14,7 +14,7 @@ import org.mindrot.jbcrypt.BCrypt;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "hospital.db";
-    private static final int DATABASE_VERSION = 8;
+    private static final int DATABASE_VERSION = 10;
 
     // Table names - changed to public
     public static final String TABLE_USERS = "users";
@@ -24,11 +24,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     // Common column names
     private static final String KEY_ID = "id";
+    private static final String KEY_USER_ID = "user_id";
 
     // Users table columns
     private static final String KEY_USERNAME = "username";
     private static final String KEY_PASSWORD = "password";
     private static final String KEY_ROLE = "role";
+    private static final String KEY_STAFF_ID = "staff_id";
     private static final String KEY_NAME = "name";
 
     // Patients table columns
@@ -53,6 +55,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String KEY_EMAIL = "email";
     private static final String KEY_JOIN_DATE = "date";
     private static final String KEY_PHOTO_PATH = "photoPath";
+    private static final String KEY_SPECIALIZATION = "specialization";
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -65,7 +68,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + KEY_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
                 + KEY_USERNAME + " TEXT UNIQUE,"
                 + KEY_PASSWORD + " TEXT,"
-                + KEY_ROLE + " TEXT" + ")";
+                + KEY_ROLE + " TEXT,"
+                + KEY_STAFF_ID + " INTEGER DEFAULT -1" + ")";
         db.execSQL(CREATE_USERS_TABLE);
 
         // Create patients table with user_id
@@ -77,7 +81,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + KEY_ADDRESS + " TEXT,"
                 + KEY_PHONE + " TEXT,"
                 + KEY_MEDICAL_HISTORY + " TEXT,"
-                + "user_id INTEGER" + ")";
+                + KEY_USER_ID + " INTEGER" + ")";
         db.execSQL(CREATE_PATIENTS_TABLE);
 
         // Create appointments table with user_id
@@ -90,7 +94,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + KEY_PURPOSE + " TEXT,"
                 + KEY_STATUS + " TEXT,"
                 + KEY_STATUS_UPDATE_TIME + " TEXT,"
-                + "user_id INTEGER" + ")";
+                + KEY_USER_ID + " INTEGER" + ")";
         db.execSQL(CREATE_APPOINTMENTS_TABLE);
 
         // Create staff table with user_id
@@ -103,34 +107,62 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + KEY_PHONE + " TEXT,"
                 + KEY_JOIN_DATE + " TEXT,"
                 + KEY_ADDRESS + " TEXT,"
-                + "photoPath TEXT," // 👈 Add this line
-                + "user_id INTEGER" + ")";
+                + KEY_SPECIALIZATION + " TEXT,"
+                + "photoPath TEXT,"
+                + KEY_USER_ID + " INTEGER" + ")";
         db.execSQL(CREATE_STAFF_TABLE);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         if (oldVersion < 5) {
-            // Add user_id columns to existing tables
-            db.execSQL("ALTER TABLE " + TABLE_PATIENTS + " ADD COLUMN user_id INTEGER DEFAULT 0");
-            db.execSQL("ALTER TABLE " + TABLE_APPOINTMENTS + " ADD COLUMN user_id INTEGER DEFAULT 0");
-            db.execSQL("ALTER TABLE " + TABLE_STAFF + " ADD COLUMN user_id INTEGER DEFAULT 0");
+            db.execSQL("ALTER TABLE " + TABLE_PATIENTS + " ADD COLUMN " + KEY_USER_ID + " INTEGER DEFAULT 0");
+            db.execSQL("ALTER TABLE " + TABLE_APPOINTMENTS + " ADD COLUMN " + KEY_USER_ID + " INTEGER DEFAULT 0");
+            db.execSQL("ALTER TABLE " + TABLE_STAFF + " ADD COLUMN " + KEY_USER_ID + " INTEGER DEFAULT 0");
         }
-        if (oldVersion < 8) {
-            // Add photoPath column to staff table
-            db.execSQL("ALTER TABLE " + TABLE_STAFF + " ADD COLUMN photoPath TEXT");
-        } else {
-            // For complete rebuild if needed
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_PATIENTS);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_APPOINTMENTS);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_STAFF);
-            onCreate(db);
+        if (oldVersion < 9) {
+            db.execSQL("ALTER TABLE " + TABLE_USERS + " ADD COLUMN " + KEY_STAFF_ID + " INTEGER DEFAULT -1");
+        }
+        if (oldVersion < 10) {
+            db.execSQL("ALTER TABLE " + TABLE_STAFF + " ADD COLUMN " + KEY_SPECIALIZATION + " TEXT");
         }
     }
 
     // User management methods
-    public long addUser(String username, String password, String role) {
+    public Patient getPatientById(int id) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = null;
+        try {
+            cursor = db.query(TABLE_PATIENTS,
+                    null, KEY_ID + " = ?",
+                    new String[]{String.valueOf(id)},
+                    null, null, null);
+
+            if (cursor != null && cursor.moveToFirst()) {
+                Patient patient = new Patient();
+                patient.setId(cursor.getInt(0));
+                patient.setName(cursor.getString(1));
+                patient.setAge(cursor.getInt(2));
+                patient.setGender(cursor.getString(3));
+                patient.setAddress(cursor.getString(4));
+                patient.setPhone(cursor.getString(5));
+                patient.setMedicalHistory(cursor.getString(6));
+                return patient;
+            }
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+        return null;
+    }
+
+    public boolean addUser(String username, String password, String role) {
+        long result = addUser(username, password, role, -1);
+        return result != -1;
+    }
+
+    public long addUser(String username, String password, String role, int staffId) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(KEY_USERNAME, username);
@@ -138,6 +170,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
         values.put(KEY_PASSWORD, hashedPassword);
         values.put(KEY_ROLE, role);
+        values.put(KEY_STAFF_ID, staffId);
 
         try {
             return db.insertOrThrow(TABLE_USERS, null, values);
@@ -150,7 +183,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.query(TABLE_USERS,
                 new String[] { KEY_ID },
-                KEY_USERNAME + "=?",
+                KEY_USERNAME + " COLLATE NOCASE = ?",
                 new String[] { username },
                 null, null, null);
 
@@ -164,70 +197,116 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public boolean checkUser(String username, String password) {
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT " + KEY_PASSWORD + " FROM " + TABLE_USERS + " WHERE " +
-                KEY_USERNAME + "=?",
-                new String[] { username });
+        Cursor cursor = db.query(TABLE_USERS,
+                new String[] { KEY_PASSWORD },
+                KEY_USERNAME + " COLLATE NOCASE = ?",
+                new String[] { username },
+                null, null, null);
 
-        boolean exists = false;
-        if (cursor.moveToFirst()) {
-            String storedPassword = cursor.getString(0);
+        if (cursor != null && cursor.moveToFirst()) {
+            String hashedPassword = cursor.getString(0);
+            cursor.close();
+            // Check if the provided password matches the hashed password
             try {
-                // Check if the stored password is a BCrypt hash
-                if (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2b$")
-                        || storedPassword.startsWith("$2y$")) {
-                    exists = BCrypt.checkpw(password, storedPassword);
-                } else {
-                    // Plain text check (for migration)
-                    if (storedPassword.equals(password)) {
-                        exists = true;
-                        // Upgrade to hashed password
-                        upgradePassword(username, password);
-                    }
-                }
+                return BCrypt.checkpw(password, hashedPassword);
             } catch (Exception e) {
-                // In case of malformed hash
-                exists = storedPassword.equals(password);
+                return false;
             }
         }
-        cursor.close();
-        return exists;
+        return false;
     }
 
-    private void upgradePassword(String username, String password) {
+    public int getStaffIdByUserId(int userId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_USERS,
+                new String[] { KEY_STAFF_ID },
+                KEY_ID + " = ?",
+                new String[] { String.valueOf(userId) },
+                null, null, null);
+
+        if (cursor != null && cursor.moveToFirst()) {
+            int staffId = cursor.getInt(0);
+            cursor.close();
+            return staffId;
+        }
+        return -1;
+    }
+
+    public boolean deleteUser(String username) {
         SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put(KEY_PASSWORD, BCrypt.hashpw(password, BCrypt.gensalt()));
-        db.update(TABLE_USERS, values, KEY_USERNAME + "=?", new String[] { username });
+        int rows = db.delete(TABLE_USERS, KEY_USERNAME + " = ?", new String[] { username });
+        return rows > 0;
+    }
+
+    public int getStaffIdByEmail(String email) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_STAFF, new String[] { KEY_ID }, KEY_EMAIL + " COLLATE NOCASE = ?", new String[] { email }, null, null, null);
+        int id = -1;
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                id = cursor.getInt(0);
+            }
+            cursor.close();
+        }
+        return id;
+    }
+
+    public int getPatientIdByPhone(String phone) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_PATIENTS, new String[] { KEY_ID }, KEY_PHONE + " = ?", new String[] { phone }, null, null, null);
+        int id = -1;
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                id = cursor.getInt(0);
+            }
+            cursor.close();
+        }
+        return id;
     }
 
     public String getUserRole(String username) {
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.query(TABLE_USERS, new String[] { KEY_ROLE },
-                KEY_USERNAME + "=?", new String[] { username },
+        Cursor cursor = db.query(TABLE_USERS,
+                new String[] { KEY_ROLE },
+                KEY_USERNAME + " COLLATE NOCASE = ?",
+                new String[] { username },
                 null, null, null);
 
-        if (cursor != null && cursor.moveToFirst()) {
-            String role = cursor.getString(0);
+        String role = null;
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                role = cursor.getString(0);
+            }
             cursor.close();
-            return role;
         }
-        return null;
+        return role;
+    }
+
+    public boolean updateUserPassword(String username, String newPassword) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        // Hash the new password before storing
+        String hashedPassword = BCrypt.hashpw(newPassword, BCrypt.gensalt());
+        values.put(KEY_PASSWORD, hashedPassword);
+
+        int rows = db.update(TABLE_USERS, values, KEY_USERNAME + " COLLATE NOCASE = ?", new String[] { username });
+        return rows > 0;
     }
 
     // Add this method for restoring users without re-hashing
-    public long restoreUser(String username, String hashedPassword, String role) {
+    public long restoreUser(String username, String hashedPassword, String role, int staffId) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(KEY_USERNAME, username);
         values.put(KEY_PASSWORD, hashedPassword); // Already hashed
         values.put(KEY_ROLE, role);
+        values.put(KEY_STAFF_ID, staffId);
 
         try {
             return db.insertOrThrow(TABLE_USERS, null, values);
         } catch (SQLiteConstraintException e) {
-            // User already exists, update role/password if needed?
-            // For now, return -1 as it exists
-            return -1;
+            // User already exists, update their record to match cloud
+            return db.update(TABLE_USERS, values, KEY_USERNAME + " COLLATE NOCASE = ?", new String[] { username });
         }
     }
 
@@ -240,15 +319,42 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         if (cursor.moveToFirst()) {
             do {
                 Map<String, String> user = new HashMap<>();
-                // 0 is ID, 1 is Username, 2 is Password, 3 is Role
+                // 0 is ID, 1 is Username, 2 is Password, 3 is Role, 4 is staff_id
                 user.put("username", cursor.getString(1));
                 user.put("password", cursor.getString(2));
                 user.put("role", cursor.getString(3));
+                user.put("staff_id", String.valueOf(cursor.getInt(4)));
                 userList.add(user);
             } while (cursor.moveToNext());
         }
         cursor.close();
         return userList;
+    }
+
+    public int getStaffIdForUser(String username) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_USERS,
+                new String[] { KEY_STAFF_ID },
+                KEY_USERNAME + " COLLATE NOCASE = ?",
+                new String[] { username },
+                null, null, null);
+
+        int staffId = -1;
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                staffId = cursor.getInt(0);
+            }
+            cursor.close();
+        }
+        return staffId;
+    }
+
+    public boolean updateStaffIdForUser(String username, int staffId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(KEY_STAFF_ID, staffId);
+        int rows = db.update(TABLE_USERS, values, KEY_USERNAME + " COLLATE NOCASE = ?", new String[] { username });
+        return rows > 0;
     }
 
     // Patient management methods
@@ -262,14 +368,38 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(KEY_ADDRESS, address);
         values.put(KEY_PHONE, phone);
         values.put(KEY_MEDICAL_HISTORY, medicalHistory);
-        values.put("user_id", userId);
+        values.put(KEY_USER_ID, userId);
 
         return db.insert(TABLE_PATIENTS, null, values);
     }
 
+    public List<Patient> getAllPatients() {
+        List<Patient> patientList = new ArrayList<>();
+        String query = "SELECT * FROM " + TABLE_PATIENTS;
+
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(query, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                Patient patient = new Patient();
+                patient.setId(cursor.getInt(0));
+                patient.setName(cursor.getString(1));
+                patient.setAge(cursor.getInt(2));
+                patient.setGender(cursor.getString(3));
+                patient.setAddress(cursor.getString(4));
+                patient.setPhone(cursor.getString(5));
+                patient.setMedicalHistory(cursor.getString(6));
+                patientList.add(patient);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return patientList;
+    }
+
     public List<Patient> getPatientsByUserId(int userId) {
         List<Patient> patientList = new ArrayList<>();
-        String query = "SELECT * FROM " + TABLE_PATIENTS + " WHERE user_id = ?";
+        String query = "SELECT * FROM " + TABLE_PATIENTS + " WHERE " + KEY_USER_ID + " = ?";
 
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery(query, new String[] { String.valueOf(userId) });
@@ -308,54 +438,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return rowsAffected > 0;
     }
 
-    public List<Patient> getAllPatients() {
-        List<Patient> patientList = new ArrayList<>();
-        String selectQuery = "SELECT * FROM " + TABLE_PATIENTS;
-
-        SQLiteDatabase db = this.getWritableDatabase();
-        Cursor cursor = db.rawQuery(selectQuery, null);
-
-        if (cursor.moveToFirst()) {
-            do {
-                Patient patient = new Patient();
-                patient.setId(cursor.getInt(0));
-                patient.setName(cursor.getString(1));
-                patient.setAge(cursor.getInt(2));
-                patient.setGender(cursor.getString(3));
-                patient.setAddress(cursor.getString(4));
-                patient.setPhone(cursor.getString(5));
-                patient.setMedicalHistory(cursor.getString(6));
-                patientList.add(patient);
-            } while (cursor.moveToNext());
-        }
-        cursor.close();
-        return patientList;
-    }
-
-    public Patient getPatientById(int id) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.query(TABLE_PATIENTS,
-                new String[] { KEY_ID, KEY_PATIENT_NAME, KEY_AGE, KEY_GENDER,
-                        KEY_ADDRESS, KEY_PHONE, KEY_MEDICAL_HISTORY },
-                KEY_ID + "=?",
-                new String[] { String.valueOf(id) },
-                null, null, null);
-
-        if (cursor.moveToFirst()) {
-            Patient patient = new Patient();
-            patient.setId(cursor.getInt(0));
-            patient.setName(cursor.getString(1));
-            patient.setAge(cursor.getInt(2));
-            patient.setGender(cursor.getString(3));
-            patient.setAddress(cursor.getString(4));
-            patient.setPhone(cursor.getString(5));
-            patient.setMedicalHistory(cursor.getString(6));
-            cursor.close();
-            return patient;
-        }
-        return null;
-    }
-
     public boolean deletePatient(int patientId) {
         SQLiteDatabase db = this.getWritableDatabase();
 
@@ -380,9 +462,36 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(KEY_DATE, date);
         values.put(KEY_TIME, time);
         values.put(KEY_PURPOSE, purpose);
-        values.put(KEY_STATUS, "scheduled");
+        values.put(KEY_STATUS, "pending");
         values.put(KEY_STATUS_UPDATE_TIME, "");
-        values.put("user_id", userId);
+        values.put(KEY_USER_ID, userId);
+
+        return db.insert(TABLE_APPOINTMENTS, null, values);
+    }
+
+    public long addAppointmentFromSync(int patientId, int doctorId, String date, String time, String purpose, String status, String statusUpdateTime, int userId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        
+        // Simple duplicate check
+        String checkQuery = "SELECT id FROM " + TABLE_APPOINTMENTS + " WHERE " +
+                KEY_PATIENT_ID + " = ? AND " + KEY_DOCTOR_ID + " = ? AND " +
+                KEY_DATE + " = ? AND " + KEY_TIME + " = ?";
+        Cursor cursor = db.rawQuery(checkQuery, new String[] { String.valueOf(patientId), String.valueOf(doctorId), date, time });
+        if (cursor.getCount() > 0) {
+            cursor.close();
+            return -1;
+        }
+        cursor.close();
+
+        ContentValues values = new ContentValues();
+        values.put(KEY_PATIENT_ID, patientId);
+        values.put(KEY_DOCTOR_ID, doctorId);
+        values.put(KEY_DATE, date);
+        values.put(KEY_TIME, time);
+        values.put(KEY_PURPOSE, purpose);
+        values.put(KEY_STATUS, status);
+        values.put(KEY_STATUS_UPDATE_TIME, statusUpdateTime);
+        values.put(KEY_USER_ID, userId);
 
         return db.insert(TABLE_APPOINTMENTS, null, values);
     }
@@ -393,7 +502,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "FROM " + TABLE_APPOINTMENTS + " a " +
                 "LEFT JOIN " + TABLE_PATIENTS + " p ON a." + KEY_PATIENT_ID + " = p." + KEY_ID + " " +
                 "LEFT JOIN " + TABLE_STAFF + " s ON a." + KEY_DOCTOR_ID + " = s." + KEY_ID + " " +
-                "WHERE a.user_id = ?";
+                "WHERE a." + KEY_USER_ID + " = ?";
 
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery(query, new String[] { String.valueOf(userId) });
@@ -444,6 +553,39 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
         cursor.close();
         return patientList;
+    }
+
+    public List<Appointment> getAppointmentsByDoctorEmail(String email) {
+        List<Appointment> appointmentList = new ArrayList<>();
+        String query = "SELECT a.*, p.name AS patient_name, s.name AS doctor_name " +
+                "FROM " + TABLE_APPOINTMENTS + " a " +
+                "LEFT JOIN " + TABLE_PATIENTS + " p ON a.patient_id = p.id " +
+                "LEFT JOIN " + TABLE_STAFF + " s ON a.doctor_id = s.id " +
+                "WHERE s.email COLLATE NOCASE = ?";
+
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(query, new String[] { email });
+
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                do {
+                    Appointment appointment = new Appointment();
+                    appointment.setId(cursor.getInt(0));
+                    appointment.setPatientId(cursor.getInt(1));
+                    appointment.setDoctorId(cursor.getInt(2));
+                    appointment.setDate(cursor.getString(3));
+                    appointment.setTime(cursor.getString(4));
+                    appointment.setPurpose(cursor.getString(5));
+                    appointment.setStatus(cursor.getString(6));
+                    appointment.setStatusUpdateTime(cursor.getString(7));
+                    appointment.setPatientName(cursor.getString(8));
+                    appointment.setDoctorName(cursor.getString(9));
+                    appointmentList.add(appointment);
+                } while (cursor.moveToNext());
+            }
+            cursor.close();
+        }
+        return appointmentList;
     }
 
     public List<Appointment> getAppointmentsByDoctorId(int doctorId) {
@@ -504,27 +646,25 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public Appointment getAppointmentById(int id) {
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.query(TABLE_APPOINTMENTS,
-                new String[] { KEY_ID, KEY_PATIENT_ID, KEY_DOCTOR_ID, KEY_DATE,
-                        KEY_TIME, KEY_PURPOSE, KEY_STATUS, KEY_STATUS_UPDATE_TIME },
-                KEY_ID + "=?",
-                new String[] { String.valueOf(id) },
-                null, null, null);
+        Cursor cursor = db.query(TABLE_APPOINTMENTS, null, KEY_ID + " = ?",
+                new String[] { String.valueOf(id) }, null, null, null);
 
-        if (cursor.moveToFirst()) {
-            Appointment appointment = new Appointment();
-            appointment.setId(cursor.getInt(0));
-            appointment.setPatientId(cursor.getInt(1));
-            appointment.setDoctorId(cursor.getInt(2));
-            appointment.setDate(cursor.getString(3));
-            appointment.setTime(cursor.getString(4));
-            appointment.setPurpose(cursor.getString(5));
-            appointment.setStatus(cursor.getString(6));
-            appointment.setStatusUpdateTime(cursor.getString(7));
+        Appointment appointment = null;
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                appointment = new Appointment();
+                appointment.setId(cursor.getInt(0));
+                appointment.setPatientId(cursor.getInt(1));
+                appointment.setDoctorId(cursor.getInt(2));
+                appointment.setDate(cursor.getString(3));
+                appointment.setTime(cursor.getString(4));
+                appointment.setPurpose(cursor.getString(5));
+                appointment.setStatus(cursor.getString(6));
+                appointment.setStatusUpdateTime(cursor.getString(7));
+            }
             cursor.close();
-            return appointment;
         }
-        return null;
+        return appointment;
     }
 
     public boolean updateAppointment(Appointment appointment) {
@@ -602,6 +742,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return null;
     }
 
+    public int getAppointmentIdByNaturalKey(String patientPhone, String doctorEmail, String date, String time) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT a.id FROM " + TABLE_APPOINTMENTS + " a " +
+                "JOIN " + TABLE_PATIENTS + " p ON a.patient_id = p.id " +
+                "JOIN " + TABLE_STAFF + " s ON a.doctor_id = s.id " +
+                "WHERE p.phone = ? AND s.email COLLATE NOCASE = ? AND a.date = ? AND a.time = ?";
+        Cursor cursor = db.rawQuery(query, new String[] { patientPhone.trim(), doctorEmail.trim(), date.trim(), time.trim() });
+        int id = -1;
+        if (cursor != null && cursor.moveToFirst()) {
+            id = cursor.getInt(0);
+            cursor.close();
+        }
+        return id;
+    }
+
     public List<Appointment> getAppointmentsByStatus(String status) {
         List<Appointment> appointmentList = new ArrayList<>();
 
@@ -642,6 +797,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return rowsAffected > 0;
     }
 
+    public boolean updateAppointmentStatus(int appointmentId, String status) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(KEY_STATUS, status);
+        values.put(KEY_STATUS_UPDATE_TIME, new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(new java.util.Date()));
+
+        int rows = db.update(TABLE_APPOINTMENTS, values, KEY_ID + " = ?", new String[] { String.valueOf(appointmentId) });
+        return rows > 0;
+    }
+
     // Staff management methods
     public List<Staff> getAllStaff() {
         List<Staff> staffList = new ArrayList<>();
@@ -660,7 +825,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 staff.setPhone(cursor.getString(5));
                 staff.setJoinDate(cursor.getString(6));
                 staff.setAddress(cursor.getString(7));
-                staff.setPhotoPath(cursor.getString(8)); // photoPath
+                staff.setSpecialization(cursor.getString(8));
+                staff.setPhotoPath(cursor.getString(9));
+                staff.setUserId(cursor.getInt(10));
                 staffList.add(staff);
             } while (cursor.moveToNext());
         }
@@ -672,8 +839,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.query(TABLE_STAFF,
                 new String[] { KEY_ID, KEY_NAME, KEY_ROLE, KEY_DEPARTMENT,
-                        KEY_EMAIL, KEY_PHONE, KEY_JOIN_DATE, KEY_ADDRESS, KEY_PHOTO_PATH },
-                "user_id = ?",
+                        KEY_EMAIL, KEY_PHONE, KEY_JOIN_DATE, KEY_ADDRESS, KEY_SPECIALIZATION, KEY_PHOTO_PATH },
+                KEY_USER_ID + " = ?",
                 new String[] { String.valueOf(userId) },
                 null, null, null);
 
@@ -687,10 +854,39 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             staff.setPhone(cursor.getString(5));
             staff.setJoinDate(cursor.getString(6));
             staff.setAddress(cursor.getString(7));
-            staff.setPhotoPath(cursor.getString(8)); // photoPath
+            staff.setSpecialization(cursor.getString(8));
+            staff.setPhotoPath(cursor.getString(9));
             cursor.close();
             return staff;
         }
+        return null;
+    }
+
+    public Staff getStaffByEmail(String email) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_STAFF,
+                new String[] { KEY_ID, KEY_NAME, KEY_ROLE, KEY_DEPARTMENT,
+                        KEY_EMAIL, KEY_PHONE, KEY_JOIN_DATE, KEY_ADDRESS, KEY_SPECIALIZATION, KEY_PHOTO_PATH },
+                KEY_EMAIL + " COLLATE NOCASE = ?",
+                new String[] { email },
+                null, null, null);
+
+        if (cursor != null && cursor.moveToFirst()) {
+            Staff staff = new Staff();
+            staff.setId(cursor.getInt(0));
+            staff.setName(cursor.getString(1));
+            staff.setRole(cursor.getString(2));
+            staff.setDepartment(cursor.getString(3));
+            staff.setEmail(cursor.getString(4));
+            staff.setPhone(cursor.getString(5));
+            staff.setJoinDate(cursor.getString(6));
+            staff.setAddress(cursor.getString(7));
+            staff.setSpecialization(cursor.getString(8));
+            staff.setPhotoPath(cursor.getString(9));
+            cursor.close();
+            return staff;
+        }
+        if (cursor != null) cursor.close();
         return null;
     }
 
@@ -711,6 +907,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(KEY_PHONE, staff.getPhone());
         values.put(KEY_JOIN_DATE, staff.getJoinDate());
         values.put(KEY_ADDRESS, staff.getAddress());
+        values.put(KEY_SPECIALIZATION, staff.getSpecialization());
         values.put(KEY_PHOTO_PATH, staff.getPhotoPath());
 
         int rowsAffected = db.update(TABLE_STAFF, values,
@@ -723,7 +920,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.query(TABLE_STAFF,
                 new String[] { KEY_ID, KEY_NAME, KEY_ROLE, KEY_DEPARTMENT,
-                        KEY_EMAIL, KEY_PHONE, KEY_JOIN_DATE, KEY_ADDRESS, KEY_PHOTO_PATH },
+                        KEY_EMAIL, KEY_PHONE, KEY_JOIN_DATE, KEY_ADDRESS, KEY_SPECIALIZATION, KEY_PHOTO_PATH, KEY_USER_ID },
                 KEY_ID + "=?",
                 new String[] { String.valueOf(id) },
                 null, null, null);
@@ -738,7 +935,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             staff.setPhone(cursor.getString(5));
             staff.setJoinDate(cursor.getString(6));
             staff.setAddress(cursor.getString(7));
-            staff.setPhotoPath(cursor.getString(8)); // ✅ now loaded
+            staff.setSpecialization(cursor.getString(8));
+            staff.setPhotoPath(cursor.getString(9));
+            staff.setUserId(cursor.getInt(10));
             cursor.close();
             return staff;
         }
@@ -747,7 +946,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public long addStaff(String name, String role, String department,
             String email, String phone, String joinDate,
-            String address, String photoPath, int userId) {
+            String address, String specialization, String photoPath, int userId) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(KEY_NAME, name);
@@ -757,10 +956,34 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(KEY_PHONE, phone);
         values.put(KEY_JOIN_DATE, joinDate);
         values.put(KEY_ADDRESS, address);
+        values.put(KEY_SPECIALIZATION, specialization);
         values.put(KEY_PHOTO_PATH, photoPath);
-        values.put("user_id", userId);
+        values.put(KEY_USER_ID, userId);
 
         return db.insert(TABLE_STAFF, null, values);
     }
+    public boolean updateStaffUserId(int staffId, int userId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(KEY_USER_ID, userId);
+        int rows = db.update(TABLE_STAFF, values, KEY_ID + " = ?", new String[] { String.valueOf(staffId) });
+        return rows > 0;
+    }
 
+    public void clearAllData() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_USERS, null, null);
+        db.delete(TABLE_STAFF, null, null);
+        db.delete(TABLE_PATIENTS, null, null);
+        db.delete(TABLE_APPOINTMENTS, null, null);
+        db.close();
+    }
+
+    public void clearSyncData() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        // We don't clear TABLE_USERS here to avoid logging out the current user
+        db.delete(TABLE_STAFF, null, null);
+        db.delete(TABLE_PATIENTS, null, null);
+        db.delete(TABLE_APPOINTMENTS, null, null);
+    }
 }

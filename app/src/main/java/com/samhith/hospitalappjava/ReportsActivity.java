@@ -75,15 +75,15 @@ public class ReportsActivity extends AppCompatActivity {
                 nurseCount++;
         }
 
-        if ("admin".equalsIgnoreCase(userRole)) {
+        if ("doctor".equalsIgnoreCase(userRole)) {
+            String username = getIntent().getStringExtra("USERNAME");
+            int staffId = databaseHelper.getStaffIdForUser(username);
+            patients = databaseHelper.getPatientsByDoctorId(staffId);
+            appointments = databaseHelper.getAppointmentsByDoctorId(staffId);
+        } else {
+            // Receptionists/Admins see all
             patients = databaseHelper.getAllPatients();
             appointments = databaseHelper.getAllAppointmentsWithNames();
-        } else if ("doctor".equalsIgnoreCase(userRole)) {
-            patients = databaseHelper.getPatientsByDoctorId(userId);
-            appointments = databaseHelper.getAppointmentsByDoctorId(userId);
-        } else {
-            patients = databaseHelper.getPatientsByUserId(userId);
-            appointments = databaseHelper.getAppointmentsByUserId(userId);
         }
 
         tvPatientCount.setText(getString(R.string.patient_count, patients.size()));
@@ -109,12 +109,13 @@ public class ReportsActivity extends AppCompatActivity {
     }
 
     private List<Appointment> getFilteredAppointments(String status) {
-        if ("admin".equalsIgnoreCase(userRole)) {
-            return databaseHelper.getAppointmentsByStatus(status);
-        } else if ("doctor".equalsIgnoreCase(userRole)) {
-            return filterByStatus(databaseHelper.getAppointmentsByDoctorId(userId), status);
+        if ("doctor".equalsIgnoreCase(userRole)) {
+            String username = getIntent().getStringExtra("USERNAME");
+            int staffId = databaseHelper.getStaffIdForUser(username);
+            return filterByStatus(databaseHelper.getAppointmentsByDoctorId(staffId), status);
         } else {
-            return filterByStatus(databaseHelper.getAppointmentsByUserId(userId), status);
+            // Receptionists/Admins
+            return databaseHelper.getAppointmentsByStatus(status);
         }
     }
 

@@ -70,6 +70,17 @@ public class EditPatientActivity extends AppCompatActivity {
                 address, phone, medicalHistory);
 
         if (isUpdated) {
+            // Sync to Firestore
+            Patient patient = new Patient();
+            patient.setId(patientId);
+            patient.setName(name);
+            patient.setAge(age);
+            patient.setGender(gender);
+            patient.setAddress(address);
+            patient.setPhone(phone);
+            patient.setMedicalHistory(medicalHistory);
+            FirestoreSyncManager.syncPatient(patient);
+
             // Set result and finish
             setResult(RESULT_OK);
             finish();

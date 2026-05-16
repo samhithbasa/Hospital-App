@@ -141,6 +141,17 @@
                     android:autofillHints="postalAddress"
                     android:contentDescription="Address field"
                     android:layout_marginBottom="16dp" />
+
+                <EditText
+                    android:id="@+id/specializationEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text"
+                    android:hint="Specialization (e.g., Surgeon)"
+                    android:minHeight="48dp"
+                    android:padding="8dp"
+                    android:contentDescription="Specialization field"
+                    android:layout_marginBottom="16dp" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 

@@ -123,6 +123,15 @@
                 android:inputType="textPostalAddress"
                 android:autofillHints="postalAddress"/>
 
+            <EditText
+                android:id="@+id/specializationEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:minHeight="48dp"
+                android:hint="Specialization (e.g., Surgeon)"
+                android:inputType="text" />
+
             <Button
                 android:id="@+id/saveButton"
                 android:layout_width="match_parent"

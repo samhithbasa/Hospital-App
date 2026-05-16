@@ -77,13 +77,15 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
 
             // Set color based on status
             if ("completed".equalsIgnoreCase(appointment.getStatus())) {
-                tvStatus.setTextColor(context.getResources().getColor(R.color.green));
+                tvStatus.setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.green));
             } else if ("canceled".equalsIgnoreCase(appointment.getStatus())) {
-                tvStatus.setTextColor(context.getResources().getColor(R.color.red));
+                tvStatus.setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.red));
             } else if ("scheduled".equalsIgnoreCase(appointment.getStatus())) {
-                tvStatus.setTextColor(context.getResources().getColor(R.color.orange));
+                tvStatus.setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.orange));
+            } else if ("pending".equalsIgnoreCase(appointment.getStatus())) {
+                tvStatus.setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.pending));
             } else {
-                tvStatus.setTextColor(context.getResources().getColor(android.R.color.black));
+                tvStatus.setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.on_surface));
             }
 
             itemView.setOnClickListener(v -> {
