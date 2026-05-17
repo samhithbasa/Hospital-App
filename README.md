@@ -11,44 +11,39 @@ You can download the latest APK directly from here:
 ## 📱 Features
 
 ### User Management
-- **Multi-role Authentication**: Admin and Staff roles with secure login using **BCrypt hashing**
-- **User Registration with OTP**: New staff can sign up with secure **OTP-based Email Verification** to ensure valid communication channels
-- **Forgot Password**: Implementation of reset password flow
-- **Role-based Access Control**: Different permissions for admin and staff users
-- **Enhanced Security**: Server-side account verification during login to block deactivated or removed users
+- **Multi-role Authentication**: Admin and Staff roles with secure login. Bypasses FirebaseAuth to support users registered only in Firestore.
+- **User Registration with OTP**: New staff can sign up with secure **OTP-based Email Verification**.
+- **Forgot Password**: Implementation of reset password flow.
+- **Modern Password UI**: Horizontal password strength indicator with checkmarks.
+- **Circular Profile Images**: Enforced a consistent circular look for all user profile images.
+- **Profile Management**: "Edit Details" feature allowing users to update Name, Phone, and Address.
 
 ### Patient Management
-- Add, view, edit, and delete patient records
-- Track patient information: name, age, gender, address, phone, medical history
-- User-specific patient records (staff can only see their own patients)
+- Add, view, edit, and delete patient records.
+- Track patient information: name, age, gender, address, phone, medical history.
+- User-specific patient records (staff can only see their own patients).
 
 ### Staff Management
-- Comprehensive staff profiles with photo support
-- Track staff details: name, role, department, email, phone, join date, address
-- Staff photo management using Glide library
+- Comprehensive staff profiles with photo support.
+- **Base64 Image Sync**: Profile pictures are compressed and stored as Base64 strings in Firestore, enabling seamless cross-device image loading without external storage.
+- Staff photo management using Glide library with support for both URIs and Base64 bitmaps.
 
 ### Appointment System
-- Schedule appointments between patients and doctors
-- Track appointment status: scheduled, completed, canceled
-- View appointments by user or doctor
-- Edit and manage appointment details
-- Status update tracking with timestamps
-- **Appointment Reminders**: Local notifications 10 minutes before scheduled time
-- **Doctor Notifications**: Dedicated background service for alerting doctors about new or updated appointments
-- **Push Notifications**: Integrated Firebase Cloud Messaging for system alerts
+- Schedule appointments between patients and doctors.
+- Track appointment status: scheduled, completed, canceled.
+- View appointments by user or doctor.
+- **Appointment Reminders**: Local notifications 10 minutes before scheduled time.
+- **Doctor Notifications**: Background service for alerting doctors about new or updated appointments.
 
 ### UI & Reports
-- Generate reports on appointments by status
-- View patient and staff statistics
-- Filter appointments by status (scheduled, completed, canceled)
-- **PDF Export**: Export comprehensive hospital reports to the device **Downloads folder** (`/storage/emulated/0/Download/`)
-- **Modern UI**: Material 3 design with personalized dashboard greetings and modern card-based action dialogs
-- **Dark Mode**: Toggleable dark theme with state persistence
+- Generate reports on appointments by status.
+- **PDF Export**: Export comprehensive hospital reports to the device **Downloads folder**.
+- **Modern UI**: Material 3 design with personalized dashboard greetings.
+- **Dark Mode**: Toggleable dark theme with state persistence.
 
 ### Cloud & Synchronization
-- **Real-time Cloud Sync**: Event-driven real-time synchronization of SQLite data to Firebase Firestore (replacing periodic background workers)
-- **Offline Support**: Robust offline data management and synchronization resolution
-- **Cloud Restore**: Pull data from Firestore to seamlessly sync across multiple devices
+- **Real-time Cloud Sync**: Event-driven real-time synchronization of SQLite data to Firebase Firestore.
+- **Universal Data Recovery**: On login, the app automatically downloads all data (Staff, Patients, Appointments) from Firestore to populate the local database on a fresh install or new device.
 
 ## 🛠️ Tech Stack
 
