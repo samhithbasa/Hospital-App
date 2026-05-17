@@ -112,16 +112,9 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
 
-                FirebaseAuth.getInstance().signInWithEmailAndPassword(finalEmail, password)
-                        .addOnCompleteListener(task -> {
-                            if (task.isSuccessful()) {
-                                verifyCloudUser(finalEmail, password);
-                            } else {
-                                String msg = task.getException() != null ? task.getException().getMessage() : "Auth Failed";
-                                errorText.setText("Login Failed: " + msg);
-                                errorText.setVisibility(android.view.View.VISIBLE);
-                            }
-                        });
+                errorText.setText("Authenticating with cloud...");
+                errorText.setVisibility(android.view.View.VISIBLE);
+                verifyCloudUser(finalEmail, password);
             } else {
                 errorText.setText("Invalid credentials or no internet.");
                 errorText.setVisibility(android.view.View.VISIBLE);
@@ -134,15 +127,25 @@ public class MainActivity extends AppCompatActivity {
                 .document(email)
                 .get(Source.SERVER)
                 .addOnSuccessListener(doc -> {
-                    if (doc.exists() && Boolean.TRUE.equals(doc.getBoolean("isActive"))) {
-                        String role = doc.getString("role");
-                        if (dbHelper.getUserRole(email) == null) {
-                            dbHelper.addUser(email, password, role, -1);
+                    if (doc.exists()) {
+                        String cloudPassword = doc.getString("password");
+                        if (cloudPassword != null && cloudPassword.equals(password)) {
+                            if (Boolean.TRUE.equals(doc.getBoolean("isActive"))) {
+                                String role = doc.getString("role");
+                                if (dbHelper.getUserRole(email) == null) {
+                                    dbHelper.addUser(email, password, role, -1);
+                                }
+                                fetchStaffProfileAndLogin(email, role);
+                            } else {
+                                errorText.setText("Account deactivated.");
+                                errorText.setVisibility(android.view.View.VISIBLE);
+                            }
+                        } else {
+                            errorText.setText("Invalid credentials.");
+                            errorText.setVisibility(android.view.View.VISIBLE);
                         }
-                        loginSuccess(email, role);
                     } else {
-                        FirebaseAuth.getInstance().signOut();
-                        errorText.setText("Account deactivated.");
+                        errorText.setText("Account not found.");
                         errorText.setVisibility(android.view.View.VISIBLE);
                     }
                 })
@@ -150,6 +153,34 @@ public class MainActivity extends AppCompatActivity {
                     errorText.setText("Cloud verification error.");
                     errorText.setVisibility(android.view.View.VISIBLE);
                 });
+    }
+
+    private void fetchStaffProfileAndLogin(String email, String role) {
+        if (!"admin".equals(role)) {
+            FirebaseFirestore.getInstance().collection("backup_staff")
+                    .document(email)
+                    .get(Source.SERVER)
+                    .addOnSuccessListener(doc -> {
+                        if (doc.exists() && dbHelper.getStaffByEmail(email) == null) {
+                            dbHelper.addStaff(
+                                doc.getString("name"),
+                                doc.getString("role"),
+                                doc.getString("department"),
+                                doc.getString("email"),
+                                doc.getString("phone"),
+                                doc.getString("join_date"),
+                                doc.getString("address"),
+                                doc.getString("specialization"),
+                                doc.getString("photoPath"),
+                                doc.getLong("id") != null ? doc.getLong("id").intValue() : -1
+                            );
+                        }
+                        loginSuccess(email, role);
+                    })
+                    .addOnFailureListener(e -> loginSuccess(email, role));
+        } else {
+            loginSuccess(email, role);
+        }
     }
 
     private void loginSuccess(String email, String role) {

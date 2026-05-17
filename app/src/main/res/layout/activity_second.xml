@@ -15,16 +15,20 @@
         android:padding="20dp">
 
         <!-- Header Section -->
-        <RelativeLayout
+        <!-- Header Section -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
             android:layout_marginBottom="32dp">
 
+            <!-- Text Container (Takes up remaining space) -->
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_alignParentStart="true">
+                android:layout_weight="1"
+                android:orientation="vertical">
 
                 <TextView
                     android:id="@+id/welcomeText"
@@ -44,14 +48,30 @@
                     android:textStyle="bold" />
             </LinearLayout>
 
+            <!-- Dark Mode Switch -->
             <com.google.android.material.switchmaterial.SwitchMaterial
                 android:id="@+id/darkModeSwitch"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
+                android:layout_marginEnd="16dp"
                 android:text="Dark" />
-        </RelativeLayout>
+
+            <!-- Profile Picture -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp">
+
+                <ImageView
+                    android:id="@+id/dashboardProfileImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/ic_person"
+                    android:background="@color/light_gray_background"
+                    android:scaleType="centerCrop" />
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
 
         <!-- Grid Container -->
         <GridLayout

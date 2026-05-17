@@ -65,6 +65,16 @@ public class EditPatientActivity extends AppCompatActivity {
         String phone = phoneEditText.getText().toString().trim();
         String medicalHistory = medicalHistoryEditText.getText().toString().trim();
 
+        if (name.isEmpty() || address.isEmpty() || phone.isEmpty()) {
+            android.widget.Toast.makeText(this, "Please fill required fields", android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (!java.util.regex.Pattern.matches("^[0-9]{10}$", phone)) {
+            android.widget.Toast.makeText(this, "Please enter a valid 10-digit phone number", android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         // Update patient in database
         boolean isUpdated = dbHelper.updatePatient(patientId, name, age, gender,
                 address, phone, medicalHistory);

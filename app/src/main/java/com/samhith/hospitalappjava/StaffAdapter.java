@@ -38,12 +38,27 @@ public class StaffAdapter extends ArrayAdapter<Staff> {
         deptTv.setText(staff.getDepartment());
 
         if (staff.getPhotoPath() != null && !staff.getPhotoPath().isEmpty()) {
-            Glide.with(getContext())
-                    .load(Uri.parse(staff.getPhotoPath()))
-                    .placeholder(R.drawable.ic_person)
-                    .error(R.drawable.ic_person)
-                    .circleCrop()
-                    .into(imageView);
+            String photoPath = staff.getPhotoPath();
+            if (photoPath.startsWith(ImageUtils.BASE64_PREFIX)) {
+                android.graphics.Bitmap bitmap = ImageUtils.decodeBase64ToBitmap(photoPath);
+                if (bitmap != null) {
+                    Glide.with(getContext())
+                            .load(bitmap)
+                            .placeholder(R.drawable.ic_person)
+                            .error(R.drawable.ic_person)
+                            .circleCrop()
+                            .into(imageView);
+                } else {
+                    imageView.setImageResource(R.drawable.ic_person);
+                }
+            } else {
+                Glide.with(getContext())
+                        .load(Uri.parse(photoPath))
+                        .placeholder(R.drawable.ic_person)
+                        .error(R.drawable.ic_person)
+                        .circleCrop()
+                        .into(imageView);
+            }
         } else {
             imageView.setImageResource(R.drawable.ic_person);
         }

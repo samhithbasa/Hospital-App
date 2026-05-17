@@ -6,6 +6,8 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.util.Log;
+import android.widget.ImageView;
+import android.net.Uri;
 
 import android.content.SharedPreferences;
 import androidx.appcompat.app.AppCompatActivity;
@@ -60,6 +62,7 @@ public class SecondActivity extends AppCompatActivity {
         SwitchMaterial darkModeSwitch = findViewById(R.id.darkModeSwitch);
         userRoleText = findViewById(R.id.userRoleText);
         TextView tvAppointmentsTitle = findViewById(R.id.tvAppointmentsTitle);
+        ImageView dashboardProfileImage = findViewById(R.id.dashboardProfileImage);
 
         // Update switch state without triggering the listener
         darkModeSwitch.setOnCheckedChangeListener(null);
@@ -94,9 +97,16 @@ public class SecondActivity extends AppCompatActivity {
         }
 
         // Apply Role-Based Visibility and UI
-        setupRoleUI(cardPatients, cardStaff, cardAppointments, cardReports, tvAppointmentsTitle);
+        setupRoleUI(cardPatients, cardStaff, cardAppointments, cardReports, tvAppointmentsTitle, dashboardProfileImage);
 
         // Click Listeners
+        dashboardProfileImage.setOnClickListener(v -> {
+            Intent intent = new Intent(this, MyProfileActivity.class);
+            intent.putExtra("USER_ID", userId);
+            intent.putExtra("USERNAME", username);
+            startActivity(intent);
+        });
+        
         cardPatients.setOnClickListener(v -> {
             Intent intent = new Intent(this, ManagePatientsActivity.class);
             intent.putExtra("USER_ID", userId);
@@ -218,7 +228,7 @@ public class SecondActivity extends AppCompatActivity {
 
     private void setupRoleUI(MaterialCardView cardPatients, MaterialCardView cardStaff, 
                              MaterialCardView cardAppointments, MaterialCardView cardReports,
-                             TextView tvAppointmentsTitle) {
+                             TextView tvAppointmentsTitle, ImageView dashboardProfileImage) {
         
         String capitalizedRole = userRole.substring(0, 1).toUpperCase() + userRole.substring(1);
         
@@ -227,6 +237,21 @@ public class SecondActivity extends AppCompatActivity {
         Staff staff = dbHelper.getStaffByEmail(username);
         if (staff != null && staff.getName() != null) {
             userRoleText.setText("Welcome, " + staff.getName());
+            if (staff.getPhotoPath() != null && !staff.getPhotoPath().isEmpty()) {
+                try {
+                    String photoPath = staff.getPhotoPath();
+                    if (photoPath.startsWith(ImageUtils.BASE64_PREFIX)) {
+                        android.graphics.Bitmap bitmap = ImageUtils.decodeBase64ToBitmap(photoPath);
+                        if (bitmap != null) {
+                            dashboardProfileImage.setImageBitmap(bitmap);
+                        }
+                    } else {
+                        dashboardProfileImage.setImageURI(Uri.parse(photoPath));
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error loading profile image", e);
+                }
+            }
         } else {
             userRoleText.setText(capitalizedRole + " Portal");
         }
@@ -255,6 +280,30 @@ public class SecondActivity extends AppCompatActivity {
         if (userId == -1) {
             startActivity(new Intent(this, MainActivity.class));
             finish();
+            return;
+        }
+
+        // Refresh profile image in case it was updated in MyProfileActivity
+        if (username != null && dbHelper != null) {
+            Staff staff = dbHelper.getStaffByEmail(username);
+            if (staff != null && staff.getPhotoPath() != null && !staff.getPhotoPath().isEmpty()) {
+                try {
+                    ImageView dashboardProfileImage = findViewById(R.id.dashboardProfileImage);
+                    if (dashboardProfileImage != null) {
+                        String photoPath = staff.getPhotoPath();
+                        if (photoPath.startsWith(ImageUtils.BASE64_PREFIX)) {
+                            android.graphics.Bitmap bitmap = ImageUtils.decodeBase64ToBitmap(photoPath);
+                            if (bitmap != null) {
+                                dashboardProfileImage.setImageBitmap(bitmap);
+                            }
+                        } else {
+                            dashboardProfileImage.setImageURI(Uri.parse(photoPath));
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error reloading profile image in onResume", e);
+                }
+            }
         }
     }
 }

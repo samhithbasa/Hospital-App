@@ -98,7 +98,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="phone"
-                    android:layout_marginBottom="16dp"/>
+                    android:layout_marginBottom="16dp"
+                    android:maxLength="10"
+                    android:digits="0123456789" />
 
                 <TextView
                     android:layout_width="match_parent"

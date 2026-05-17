@@ -26,6 +26,7 @@ public class AddStaffActivity extends AppCompatActivity {
             emailEditText, phoneEditText, joinDateEditText, addressEditText, specializationEditText;
     private ImageView profileImageView;
     private Uri selectedImageUri;
+    private String encodedImageStr = "";
     private Button saveButton;
     private DatabaseHelper dbHelper;
     private int userId;
@@ -89,8 +90,16 @@ public class AddStaffActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null) {
-            selectedImageUri = data.getData();
-            profileImageView.setImageURI(selectedImageUri);
+            Uri tempUri = data.getData();
+            if (tempUri != null) {
+                String base64Str = ImageUtils.encodeImageToBase64(this, tempUri);
+                if (base64Str != null) {
+                    encodedImageStr = base64Str;
+                    profileImageView.setImageURI(tempUri); // Show local preview
+                } else {
+                    Toast.makeText(this, "Failed to load image", Toast.LENGTH_SHORT).show();
+                }
+            }
         }
     }
 
@@ -104,7 +113,7 @@ public class AddStaffActivity extends AppCompatActivity {
         String joinDate = joinDateEditText.getText().toString().trim();
         String address = addressEditText.getText().toString().trim();
         String specialization = specializationEditText.getText().toString().trim();
-        String photoPath = selectedImageUri != null ? selectedImageUri.toString() : null;
+        String photoPath = encodedImageStr.isEmpty() ? null : encodedImageStr;
 
         if (name.isEmpty() || role.isEmpty() || department.isEmpty() ||
                 email.isEmpty() || phone.isEmpty() || joinDate.isEmpty() || address.isEmpty()) {

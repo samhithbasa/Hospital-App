@@ -43,7 +43,25 @@
                     android:text="Create your staff account"
                     android:textColor="@android:color/darker_gray"
                     android:textSize="14sp"
-                    android:layout_marginBottom="24dp"/>
+                    android:layout_marginBottom="16dp"/>
+
+                <!-- Profile Picture Selection -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:layout_gravity="center"
+                    app:cardCornerRadius="50dp"
+                    app:cardElevation="0dp"
+                    android:layout_marginBottom="24dp">
+
+                    <ImageView
+                        android:id="@+id/profileImageView"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/ic_person"
+                        android:background="@color/light_gray_background"
+                        android:scaleType="centerCrop" />
+                </com.google.android.material.card.MaterialCardView>
 
                 <!-- Role Selector -->
                 <com.google.android.material.button.MaterialButtonToggleGroup
@@ -118,6 +136,105 @@
                         android:inputType="textPassword" />
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <!-- Password Strength Indicator -->
+                <LinearLayout
+                    android:id="@+id/passwordStrengthLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="16dp"
+                    android:gravity="center"
+                    android:weightSum="4">
+
+                    <!-- Rule 1: Length -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center">
+                        <ImageView
+                            android:id="@+id/ivRuleLength"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:src="@drawable/ic_circle_outline" />
+                        <TextView
+                            android:id="@+id/tvRuleLength"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="8+ Chars"
+                            android:textColor="@color/gray"
+                            android:textSize="10sp"
+                            android:layout_marginTop="4dp" />
+                    </LinearLayout>
+
+                    <!-- Rule 2: Uppercase -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center">
+                        <ImageView
+                            android:id="@+id/ivRuleUppercase"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:src="@drawable/ic_circle_outline" />
+                        <TextView
+                            android:id="@+id/tvRuleUppercase"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="A-Z"
+                            android:textColor="@color/gray"
+                            android:textSize="10sp"
+                            android:layout_marginTop="4dp" />
+                    </LinearLayout>
+
+                    <!-- Rule 3: Number -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center">
+                        <ImageView
+                            android:id="@+id/ivRuleNumber"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:src="@drawable/ic_circle_outline" />
+                        <TextView
+                            android:id="@+id/tvRuleNumber"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0-9"
+                            android:textColor="@color/gray"
+                            android:textSize="10sp"
+                            android:layout_marginTop="4dp" />
+                    </LinearLayout>
+
+                    <!-- Rule 4: Special -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center">
+                        <ImageView
+                            android:id="@+id/ivRuleSpecial"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:src="@drawable/ic_circle_outline" />
+                        <TextView
+                            android:id="@+id/tvRuleSpecial"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="!@#"
+                            android:textColor="@color/gray"
+                            android:textSize="10sp"
+                            android:layout_marginTop="4dp" />
+                    </LinearLayout>
+                </LinearLayout>
+
                 <!-- Doctor-Only Fields -->
                 <LinearLayout
                     android:id="@+id/doctorFields"
@@ -150,7 +267,9 @@
                             android:id="@+id/etPhone"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:inputType="phone" />
+                            android:inputType="phone"
+                            android:maxLength="10"
+                            android:digits="0123456789" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.textfield.TextInputLayout

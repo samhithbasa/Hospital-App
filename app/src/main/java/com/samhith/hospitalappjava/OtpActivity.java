@@ -79,9 +79,13 @@ public class OtpActivity extends AppCompatActivity {
         String specialization = getIntent().getStringExtra("SPECIALIZATION");
         String phone = getIntent().getStringExtra("PHONE");
         String address = getIntent().getStringExtra("ADDRESS");
+        String photoPath = getIntent().getStringExtra("PHOTO_PATH");
+        if (photoPath != null && photoPath.isEmpty()) {
+            photoPath = null;
+        }
         String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 
-        long staffId = dbHelper.addStaff(name, role, "General", email, phone, todayDate, address, specialization, null, -1);
+        long staffId = dbHelper.addStaff(name, role, "General", email, phone, todayDate, address, specialization, photoPath, -1);
 
         if (staffId != -1) {
             boolean userCreated = dbHelper.addUser(email, password, role);

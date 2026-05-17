@@ -55,6 +55,12 @@
             android:parentActivityName=".MainActivity"/>
         <activity android:name=".OtpActivity" 
             android:label="Verify Email"/>
+        <activity android:name=".MyProfileActivity" 
+            android:label="My Profile"
+            android:parentActivityName=".SecondActivity"/>
+        <activity android:name=".EditMyProfileActivity" 
+            android:label="Edit Details"
+            android:parentActivityName=".MyProfileActivity"/>
 
         <service
             android:name=".DoctorNotificationService"

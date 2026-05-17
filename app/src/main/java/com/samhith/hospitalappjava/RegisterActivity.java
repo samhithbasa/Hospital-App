@@ -12,6 +12,16 @@ import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.textfield.TextInputEditText;
 import java.util.Locale;
 import java.util.Random;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+import android.graphics.Color;
+import java.util.regex.Pattern;
+import android.net.Uri;
+import android.widget.ImageView;
+import androidx.annotation.Nullable;
 
 public class RegisterActivity extends AppCompatActivity {
 
@@ -20,6 +30,15 @@ public class RegisterActivity extends AppCompatActivity {
     private MaterialButtonToggleGroup roleToggleGroup;
     private String selectedRole = "doctor";
     private DatabaseHelper dbHelper;
+    
+    private ImageView ivRuleLength, ivRuleUppercase, ivRuleNumber, ivRuleSpecial;
+    private TextView tvRuleLength, tvRuleUppercase, tvRuleNumber, tvRuleSpecial;
+    private boolean isPasswordValid = false;
+    
+    private ImageView profileImageView;
+    private Uri selectedImageUri;
+    private String encodedImageStr = "";
+    private static final int PICK_IMAGE_REQUEST = 1001;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +57,19 @@ public class RegisterActivity extends AppCompatActivity {
         roleToggleGroup = findViewById(R.id.roleToggleGroup);
         MaterialButton btnRegister = findViewById(R.id.btnRegister);
         TextView tvLoginLink = findViewById(R.id.tvLoginLink);
+        profileImageView = findViewById(R.id.profileImageView);
+
+        ivRuleLength = findViewById(R.id.ivRuleLength);
+        ivRuleUppercase = findViewById(R.id.ivRuleUppercase);
+        ivRuleNumber = findViewById(R.id.ivRuleNumber);
+        ivRuleSpecial = findViewById(R.id.ivRuleSpecial);
+
+        tvRuleLength = findViewById(R.id.tvRuleLength);
+        tvRuleUppercase = findViewById(R.id.tvRuleUppercase);
+        tvRuleNumber = findViewById(R.id.tvRuleNumber);
+        tvRuleSpecial = findViewById(R.id.tvRuleSpecial);
+        
+        setupPasswordWatcher();
 
         roleToggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
             if (isChecked) {
@@ -56,6 +88,68 @@ public class RegisterActivity extends AppCompatActivity {
             startActivity(new Intent(RegisterActivity.this, MainActivity.class));
             finish();
         });
+        
+        profileImageView.setOnClickListener(v -> openImagePicker());
+    }
+
+    private void openImagePicker() {
+        Intent intent = new Intent(Intent.ACTION_PICK);
+        intent.setType("image/*");
+        startActivityForResult(intent, PICK_IMAGE_REQUEST);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null) {
+            Uri tempUri = data.getData();
+            if (tempUri != null) {
+                String base64Str = ImageUtils.encodeImageToBase64(this, tempUri);
+                if (base64Str != null) {
+                    encodedImageStr = base64Str;
+                    profileImageView.setImageURI(tempUri); // Show local preview
+                } else {
+                    Toast.makeText(this, "Failed to load image", Toast.LENGTH_SHORT).show();
+                }
+            }
+        }
+    }
+
+    private void setupPasswordWatcher() {
+        etPassword.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                String password = s.toString();
+                
+                boolean hasLength = password.length() >= 8;
+                boolean hasUppercase = Pattern.compile("[A-Z]").matcher(password).find();
+                boolean hasNumber = Pattern.compile("[0-9]").matcher(password).find();
+                boolean hasSpecial = Pattern.compile("[^a-zA-Z0-9]").matcher(password).find();
+                
+                updateRuleUI(tvRuleLength, ivRuleLength, hasLength);
+                updateRuleUI(tvRuleUppercase, ivRuleUppercase, hasUppercase);
+                updateRuleUI(tvRuleNumber, ivRuleNumber, hasNumber);
+                updateRuleUI(tvRuleSpecial, ivRuleSpecial, hasSpecial);
+                
+                isPasswordValid = hasLength && hasUppercase && hasNumber && hasSpecial;
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
+    }
+
+    private void updateRuleUI(TextView tv, ImageView iv, boolean isValid) {
+        if (isValid) {
+            iv.setImageResource(R.drawable.ic_check_circle);
+            tv.setTextColor(Color.parseColor("#4CAF50")); // Green
+        } else {
+            iv.setImageResource(R.drawable.ic_circle_outline);
+            tv.setTextColor(Color.GRAY);
+        }
     }
 
     private void handleRegistration() {
@@ -68,8 +162,8 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
-        if (password.length() < 6) {
-            Toast.makeText(this, "Password must be at least 6 characters", Toast.LENGTH_SHORT).show();
+        if (!isPasswordValid) {
+            Toast.makeText(this, "Please ensure password meets all requirements", Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -89,6 +183,11 @@ public class RegisterActivity extends AppCompatActivity {
 
             if (specialization.isEmpty() || phone.isEmpty() || address.isEmpty()) {
                 Toast.makeText(this, "Please fill all doctor-specific fields", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            if (phone.length() != 10) {
+                Toast.makeText(this, "Mobile number must be exactly 10 digits", Toast.LENGTH_SHORT).show();
                 return;
             }
         } else {
@@ -117,6 +216,7 @@ public class RegisterActivity extends AppCompatActivity {
                 intent.putExtra("PHONE", phone);
                 intent.putExtra("ADDRESS", address);
                 intent.putExtra("OTP", otp);
+                intent.putExtra("PHOTO_PATH", encodedImageStr);
                 startActivity(intent);
             }
 

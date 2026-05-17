@@ -111,7 +111,9 @@
                     android:padding="8dp"
                     android:autofillHints="phone"
                     android:contentDescription="Phone number field"
-                    android:layout_marginBottom="16dp" />
+                    android:layout_marginBottom="16dp"
+                    android:maxLength="10"
+                    android:digits="0123456789" />
 
                 <TextView android:text="@string/label_join_date" android:layout_width="match_parent"
                     android:layout_height="wrap_content"
