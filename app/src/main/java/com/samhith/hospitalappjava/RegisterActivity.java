@@ -22,6 +22,11 @@ import java.util.regex.Pattern;
 import android.net.Uri;
 import android.widget.ImageView;
 import androidx.annotation.Nullable;
+import androidx.activity.result.ActivityResultLauncher;
+import com.canhub.cropper.CropImageContract;
+import com.canhub.cropper.CropImageContractOptions;
+import com.canhub.cropper.CropImageOptions;
+import com.canhub.cropper.CropImageView;
 
 public class RegisterActivity extends AppCompatActivity {
 
@@ -39,6 +44,38 @@ public class RegisterActivity extends AppCompatActivity {
     private Uri selectedImageUri;
     private String encodedImageStr = "";
     private static final int PICK_IMAGE_REQUEST = 1001;
+
+    private final ActivityResultLauncher<CropImageContractOptions> cropImageLauncher =
+            registerForActivityResult(new CropImageContract(), result -> {
+                if (result.isSuccessful()) {
+                    Uri croppedImageUri = result.getUriContent();
+                    if (croppedImageUri != null) {
+                        String base64Str = ImageUtils.encodeImageToBase64(this, croppedImageUri);
+                        if (base64Str != null) {
+                            encodedImageStr = base64Str;
+                            profileImageView.setImageURI(croppedImageUri);
+                        } else {
+                            Toast.makeText(this, "Failed to load cropped image", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                } else {
+                    Exception error = result.getError();
+                    if (error != null) {
+                        Toast.makeText(this, "Crop failed: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+
+    private void launchImageCropper(Uri imageUri) {
+        CropImageOptions cropImageOptions = new CropImageOptions();
+        cropImageOptions.guidelines = CropImageView.Guidelines.ON;
+        cropImageOptions.fixAspectRatio = true;
+        cropImageOptions.aspectRatioX = 1;
+        cropImageOptions.aspectRatioY = 1;
+        
+        CropImageContractOptions cropOptions = new CropImageContractOptions(imageUri, cropImageOptions);
+        cropImageLauncher.launch(cropOptions);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,13 +141,7 @@ public class RegisterActivity extends AppCompatActivity {
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null) {
             Uri tempUri = data.getData();
             if (tempUri != null) {
-                String base64Str = ImageUtils.encodeImageToBase64(this, tempUri);
-                if (base64Str != null) {
-                    encodedImageStr = base64Str;
-                    profileImageView.setImageURI(tempUri); // Show local preview
-                } else {
-                    Toast.makeText(this, "Failed to load image", Toast.LENGTH_SHORT).show();
-                }
+                launchImageCropper(tempUri);
             }
         }
     }

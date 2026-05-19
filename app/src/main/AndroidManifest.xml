@@ -62,6 +62,10 @@
             android:label="Edit Details"
             android:parentActivityName=".MyProfileActivity"/>
 
+        <activity
+            android:name="com.canhub.cropper.CropImageActivity"
+            android:theme="@style/Base.Theme.AppCompat" />
+
         <service
             android:name=".DoctorNotificationService"
             android:enabled="true"
