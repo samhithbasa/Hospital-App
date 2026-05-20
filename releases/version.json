@@ -1,0 +1,7 @@
+{
+  "latestVersionCode": 2,
+  "latestVersionName": "1.1",
+  "apkUrl": "https://raw.githubusercontent.com/samhithbasa/Hospital-App/main/releases/HospitalApp.apk",
+  "releaseNotes": "- Reusable inline profile photo cropping (no new page)\n- In-activity Bottom Sheet options overlay\n- Smooth background blur interface",
+  "forceUpdate": false
+}

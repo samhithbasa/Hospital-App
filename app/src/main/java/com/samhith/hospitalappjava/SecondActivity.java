@@ -165,6 +165,9 @@ public class SecondActivity extends AppCompatActivity {
 
         // Real-time security listener: Force logout if account deactivated
         setupSecurityListener();
+
+        // Check for App updates
+        UpdateChecker.checkForUpdates(this);
     }
 
     private void setupSecurityListener() {
