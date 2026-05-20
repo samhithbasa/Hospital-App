@@ -64,7 +64,7 @@
 
         <activity
             android:name="com.canhub.cropper.CropImageActivity"
-            android:theme="@style/Base.Theme.AppCompat" />
+            android:theme="@style/Theme.HospitalAppJava.Cropper" />
 
         <service
             android:name=".DoctorNotificationService"

@@ -6,4 +6,13 @@
     </style>
 
     <style name="Theme.HospitalAppJava" parent="Base.Theme.HospitalAppJava" />
+
+    <!-- Theme for CropImageActivity to match App branding -->
+    <style name="Theme.HospitalAppJava.Cropper" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryDark">@color/primary_variant</item>
+        <item name="colorAccent">@color/accent</item>
+        <item name="android:statusBarColor">@color/primary_variant</item>
+        <item name="android:windowBackground">@color/background</item>
+    </style>
 </resources>

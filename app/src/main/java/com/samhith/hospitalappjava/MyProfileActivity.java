@@ -57,6 +57,8 @@ public class MyProfileActivity extends AppCompatActivity {
         cropImageOptions.fixAspectRatio = true;
         cropImageOptions.aspectRatioX = 1;
         cropImageOptions.aspectRatioY = 1;
+        cropImageOptions.cropShape = CropImageView.CropShape.OVAL;
+        cropImageOptions.activityTitle = "Crop Profile Photo";
         
         CropImageContractOptions cropOptions = new CropImageContractOptions(imageUri, cropImageOptions);
         cropImageLauncher.launch(cropOptions);
