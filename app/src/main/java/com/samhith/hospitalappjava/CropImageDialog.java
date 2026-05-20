@@ -70,7 +70,7 @@ public class CropImageDialog extends DialogFragment {
         cropImageView = view.findViewById(R.id.dialogCropImageView);
         progressOverlay = view.findViewById(R.id.progressOverlay);
         ImageButton btnCancel = view.findViewById(R.id.btnCancelCrop);
-        MaterialButton btnSave = view.findViewById(R.id.btnSaveCrop);
+        ImageButton btnSave = view.findViewById(R.id.btnSaveCrop);
         ImageButton btnRotateLeft = view.findViewById(R.id.btnRotateLeft);
 
         // Configure Crop Options for Circular Avatar Photo

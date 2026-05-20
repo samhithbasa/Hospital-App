@@ -3,77 +3,94 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#E6121212">
+    android:background="#E6121212"
+    android:clickable="true"
+    android:focusable="true">
 
-    <!-- Top Action Bar/Header -->
-    <RelativeLayout
-        android:id="@+id/cropToolbar"
+    <!-- Centered Dialog Box Card -->
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:paddingHorizontal="16dp"
-        android:background="#33000000"
-        android:layout_alignParentTop="true">
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:layout_margin="24dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="8dp"
+        app:strokeWidth="0dp"
+        app:cardBackgroundColor="?attr/colorSurfaceContainer">
 
-        <ImageButton
-            android:id="@+id/btnCancelCrop"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_centerVertical="true"
-            android:layout_alignParentStart="true"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_menu_close_clear_cancel"
-            app:tint="@android:color/white"
-            android:contentDescription="Cancel" />
-
-        <TextView
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:text="Crop Profile Photo"
-            android:textColor="@android:color/white"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            android:orientation="vertical">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSaveCrop"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
-            android:layout_alignParentEnd="true"
-            android:text="CROP"
-            android:textColor="@color/primary"
-            android:textStyle="bold" />
-    </RelativeLayout>
+            <!-- Toolbar/Header inside Card -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:paddingHorizontal="12dp"
+                android:background="?attr/colorSurfaceContainerHigh">
 
-    <!-- CropImageView (Centered) -->
-    <com.canhub.cropper.CropImageView
-        android:id="@+id/dialogCropImageView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@id/cropToolbar"
-        android:layout_above="@+id/cropControls"
-        android:layout_margin="16dp" />
+                <ImageButton
+                    android:id="@+id/btnCancelCrop"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_centerVertical="true"
+                    android:layout_alignParentStart="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_menu_close_clear_cancel"
+                    app:tint="?attr/colorOnSurface"
+                    android:contentDescription="Cancel" />
 
-    <!-- Bottom Controls (Rotate) -->
-    <LinearLayout
-        android:id="@+id/cropControls"
-        android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:layout_alignParentBottom="true"
-        android:background="#33000000"
-        android:orientation="horizontal"
-        android:gravity="center">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:text="Crop Profile Photo"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
 
-        <ImageButton
-            android:id="@+id/btnRotateLeft"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_menu_rotate"
-            app:tint="@android:color/white"
-            android:contentDescription="Rotate" />
-    </LinearLayout>
+                <!-- Check/Tick mark button instead of "CROP" text -->
+                <ImageButton
+                    android:id="@+id/btnSaveCrop"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_centerVertical="true"
+                    android:layout_alignParentEnd="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_check"
+                    app:tint="@color/primary"
+                    android:contentDescription="Save" />
+            </RelativeLayout>
+
+            <!-- CropImageView (Fixed Height to sit inside Dialog) -->
+            <com.canhub.cropper.CropImageView
+                android:id="@+id/dialogCropImageView"
+                android:layout_width="match_parent"
+                android:layout_height="320dp"
+                android:layout_margin="8dp" />
+
+            <!-- Bottom Controls (Rotate) -->
+            <LinearLayout
+                android:id="@+id/cropControls"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:background="?attr/colorSurfaceContainerHigh"
+                android:orientation="horizontal"
+                android:gravity="center">
+
+                <ImageButton
+                    android:id="@+id/btnRotateLeft"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_menu_rotate"
+                    app:tint="?attr/colorOnSurface"
+                    android:contentDescription="Rotate" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
     <!-- Progress Overlay -->
     <FrameLayout
