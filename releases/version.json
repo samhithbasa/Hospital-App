@@ -1,7 +1,7 @@
 {
-  "latestVersionCode": 3,
-  "latestVersionName": "1.2",
+  "latestVersionCode": 4,
+  "latestVersionName": "1.3",
   "apkUrl": "https://raw.githubusercontent.com/samhithbasa/Hospital-App/main/releases/HospitalApp.apk",
-  "releaseNotes": "- Added new features\n- UI improvements",
+  "releaseNotes": "- Redesigned PDF report export with clean tabular layout and custom metric cards\n- Overridden personalized system fonts to standard professional sans-serif in PDF output\n- Added column safe-truncation and dynamic page layout formatting",
   "forceUpdate": false
 }
